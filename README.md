@@ -1,4 +1,4 @@
 # aics306-22s
-Existing file capacity exploration projects were changed because they did not fit the topic of system security.
+Here is the development branch.
 
-We'll do the DLL injection automation project again.
+Before performing the injection attack, the code to extract the required dll list, check the permissions of the folder where the dll is stored, and check whether the dll is hard-coded is all written.
