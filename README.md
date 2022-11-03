@@ -1,3 +1,4 @@
 # aics306-22s
-Browse Disk(folder, file) capacity
-loop speed test
+Existing file capacity exploration projects were changed because they did not fit the topic of system security.
+
+We'll do the DLL injection automation project again.
