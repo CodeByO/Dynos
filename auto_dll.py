@@ -17,7 +17,7 @@ def list_dll(pid):
     if 'C:/' not in program_name:
         name_split = program_name.split('/')
         name = name_split[-1]
-        for dirpath, dirname, filename in tqdm(os.walk("C:/Users/codeb/Desktop/ExamDLL")):
+        for dirpath, dirname, filename in tqdm(os.walk("C:/")):
             if name in filename:
                 program_name =  os.path.join(dirpath, name)
 
