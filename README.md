@@ -7,3 +7,6 @@ The dll injector links we referenced
     https://github.com/numaru/injector
 
     https://kali-km.tistory.com/entry/DLL-Injection-API
+
+Update:
+    Using pyinjector Library we Solve the problem

@@ -10,6 +10,8 @@ def list_dll(pid):
     try:
         program_name = dlls.split("\n")[7]
         program_name = program_name.replace("Command line: ", '').replace('"', '').replace(' -bystartup','').replace('\\','/')
+        if not program_name.endswith('.exe'):
+            raise Exception("not exe File")
     except:
         print("Wrong pid...")
     
