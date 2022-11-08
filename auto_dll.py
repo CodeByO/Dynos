@@ -3,6 +3,7 @@ import time
 from tqdm import tqdm
 from pyinjector import inject
 import subprocess
+import shutil
 def list_dll(pid):
     stream = os.popen("Listdlls.exe " + str(pid))
     dlls = stream.read()
@@ -71,6 +72,13 @@ def find_string(name,list_name,list_dir):
     
 def create_process(path):
         return subprocess.Popen([path]).pid
+    
+
+def change_dll(dll_path,hijactable_dll_path):
+    if os.path.exists(hijactable_dll_path):
+        os.remove(hijactable_dll_path)
+        os.rename(dll_path,hijactable_dll_path)
+
 
 if __name__=='__main__':
     path_exe = "C:/Users/codeb/Desktop/ExamDLL2/CreateDLL/x64/Debug/MainDLL.exe"
