@@ -2,8 +2,6 @@ import os
 from tqdm import tqdm
 from pyinjector import inject
 import subprocess
-import wmi
-from time import sleep
 import psutil
 class hiJacking():
     def hiJacking(self):
@@ -94,7 +92,6 @@ class hiJacking():
         path_exe = "C:/Users/codeb/Desktop/ExamDLL2/CreateDLL/x64/Debug/MainDLL.exe"
         path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
         pid = self.create_process(path_exe)
-        
         program_name, list_dlls = self.list_dll(pid)
         file_list,dir_list = self.check_permission(list_dlls)
         if not len(file_list) == 0:
@@ -124,13 +121,10 @@ class injection():
                 if username.endswith('SYSTEM'):
                     print("WOW")
                 print('NAME:', ps_name, ' CMD:', cmdline, ' userName: ', username)
+
         except:
             pass
         
-        with open('./process_list.txt','w') as f:
-            for process in process_list:
-                f.write(str(process))
-            f.close()
         
      
     #find_process에서 찾은 pid를 악성 dll을 이용하여 인젝션 해보기
