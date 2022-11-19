@@ -6,6 +6,16 @@ import psutil
 class hiJacking():
     def hiJacking(self):
         pass
+    def in_PID(self, pid):
+        pid = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n     2개 이상 -> m pid pid ...\n입력할 명령어:')
+        pid_arr = pid.split(' ')
+        if pid[0] == 'o':
+            pid = pid_arr[1]
+        else:
+            for i in range(1, len(pid_arr)):
+                pid = pid_arr[i]
+                
+        return pid
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
     def list_dll(self,pid):
         stream = os.popen("Listdlls.exe " + str(pid))
