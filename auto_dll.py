@@ -116,38 +116,40 @@ class hiJacking():
                 changed_path.append(search_order_path[i])
             except:
                 print(list_dlls[i] + "  1순위 복사 에러")
-            print(search_order_path[i])
-            
-            print(list_dlls[i])
-            print("-------------------------")
-        print(program_name)
         newPid = self.create_process(program_name)
         program_name, newList_dlls = self.list_dll(newPid)
         
-        
+        # successed_path = {}
+        # for i in range(len(newList_dlls)):
+        #     if newList_dlls[i] in changed_path:
+        #         successed_path[list_dlls[i]] = newList_dlls[i]
+
+
         successed_path = {}
-        for i in range(len(newList_dlls)):
-            if newList_dlls[i] in changed_path:
-                successed_path[list_dlls[i]] = newList_dlls[i]
-        successed_path2 = {}
+
         for i in newList_dlls:
             if i in changed_path:
                 name_split = i.split('/')
                 name = name_split[-1]
                 
                 for j in list_dlls:
-                    j.endswith(name)
-                    successed_path2[i] = j
+                    name2_split = j.split('/')
+                    name2 = name2_split[-1]
+                    if name == name2:
+                        successed_path[i] = j
+
+
+        psutil.Process(newPid).kill()
+        #psutil.Process(pid).kill()
         
-        try:
-            for i in changed_path:
-                psutil.Process(newPid).kill()
-                #psutil.Process(pid).kill()
-                print(i)
-                os.remove(i)
-        except:
-            print("cannot remove file")
-        return successed_path2
+            
+        for i in changed_path:
+                try:
+                    os.remove(i)
+                except:
+                    print(i + " : cannot remove file")
+        
+        return successed_path
         
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
@@ -204,6 +206,6 @@ if __name__=='__main__':
     #pid = dll_hijact.create_process(path_exe)
     #inject(pid,path_dll)
     #pid = dll_hijact.create_process("C:/Users/CodeByO/Desktop/test/crackme1.exe")
-    success = dll_hijact.search_order_hijack(15264)    
+    success = dll_hijact.search_order_hijack(20588)    
     for i,j in success.items():
         print(i,j)
