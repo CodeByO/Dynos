@@ -158,8 +158,14 @@ class injection():
 
 
 if __name__=='__main__': 
-    dll_inject = injection()
-    dll_hijact = hiJacking()
+    att_mod = input(print('\nDLLInjection: \'DI\', DLLHiJacking: \'DH\'\n Choose attack mode:'))
+    if att_mod == 'DI':
+        dll_inject = injection()
+    elif att_mod == 'DH':
+        dll_hijact = hiJacking()
+    else:
+        print("Attack mode is wrong ..")
+    
     path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
     path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
     #pid = dll_hijact.create_process(path_exe)
