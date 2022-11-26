@@ -1,14 +1,7 @@
 #include <windows.h>
 #include <iostream>
 #include <shobjidl.h>
-
 using namespace std;
-
-void hello() {
-    AllocConsole();
-    freopen("CONOUT$", "w", stdout);
-    cout << "Hello, World!" << endl;
-}
 
 HRESULT CopyItem(__in PCWSTR pszSrcItem, __in PCWSTR pszDest, PCWSTR pszNewName)
 {
@@ -34,7 +27,7 @@ HRESULT CopyItem(__in PCWSTR pszSrcItem, __in PCWSTR pszDest, PCWSTR pszNewName)
             // user during the operation. This includes error, confirmation,
             // and progress dialogs.
             //
-            hr = pfo->SetOperationFlags(FOF_NO_UI);
+            hr = pfo->SetOperationFlags(FOF_NOCONFIRMATION);
             if (SUCCEEDED(hr))
             {
                 //
@@ -96,6 +89,24 @@ HRESULT CopyItem(__in PCWSTR pszSrcItem, __in PCWSTR pszDest, PCWSTR pszNewName)
 }
 
 bool __stdcall DllMain(HMODULE /*module*/, DWORD reason, LPVOID /*reserved*/) {
-    if (reason == DLL_PROCESS_ATTACH) hello();
+    
+    PCWSTR srcPath = L"C:\\Users\\codeb\\Desktop\\test.txt";
+    PCWSTR desPath = L"C:\\Users\\codeb\\Desktop\\test\\";
+    PCWSTR FileName = L"hack.txt";
+    HRESULT res2;
+    if (reason == DLL_PROCESS_ATTACH){
+        res2 = CopyItem(srcPath, desPath, FileName);
+        AllocConsole();
+        FILE* fp = freopen("CONOUT$", "w", stdout);
+        //cout << res << endl;
+        cout << res2 << endl;
+    }
+    if(reason == DLL_THREAD_ATTACH){
+        res2 = CopyItem(srcPath, desPath, FileName);
+        
+    }
+    AllocConsole();
+    FILE* fp = freopen("CONOUT$", "w", stdout);
+    cout << res2 << endl;
     return true;
 }
