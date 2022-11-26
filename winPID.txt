@@ -1,0 +1,34 @@
+import psutil
+
+pro = ["csrss.exe",
+"explorer.exe",
+"lsass.exe",
+"internat.exe",
+"mstask.exe",
+"smss.exe",
+"spoolsv.exe",
+"svchost.exe",
+"services.exe",
+"System",
+"System Idle Process",
+"taskmgr.exe",
+"winlogon.exe",
+"winmgmt.exe",
+"msdtc.exe",
+"ctfmon.exe",
+"dfssvc.exe"]
+
+a = []
+for process in psutil.process_iter():
+    print(process.name() + "\t"+str(process.pid))
+    a.append([process.name(), process.pid])
+
+print(len(a))
+pid = []
+for i in range(0,len(a)):
+    for j in pro:
+        if j in a[i]:
+            pid.append(a[i][1])
+
+print(len(pid))
+print(pid)
