@@ -8,14 +8,35 @@ class hiJacking():
     def hiJacking(self):
         pass
     def in_PID(self):
+        del_pidlist = [0, 4, 120, 540, 748, 848, 860, 908, 916, 948,
+                       988, 1196, 1256, 1420, 1424, 1436, 1456, 1468, 1548, 1628,
+                       1740, 1748, 1812, 1820, 1828, 1924, 2000, 2072, 2096, 2172,
+                       2204, 2220, 2284, 2368, 2424, 2448, 2512, 2584, 2608, 2616,
+                       2832, 3012, 3024, 3160, 3180, 3232, 3472, 3568, 3656, 3708,
+                       3724, 3744, 3828, 3888, 3972, 4116, 4364, 4372, 4424, 4464,
+                       4712, 4788, 5088, 5424, 5444, 5804, 5888, 6440, 8224, 8248,
+                       8344, 8484, 8620, 8724, 8744, 8852, 9272, 9312, 9612, 9820,
+                       10228, 10236, 10408, 11228, 11540, 11852, 13152, 13712, 14300, 15280,
+                       16536, 17396]
         pid = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n     2개 이상 -> m pid pid ...\n입력할 명령어:')
         pid_arr = pid.split(' ')
         if pid[0] == 'o':
             pid = pid_arr[1]
-        else:
+        elif pid[0] == 'm':
             pid = []
             for i in range(1, len(pid_arr)):
                 pid.append(pid_arr[i])
+                
+                if int(pid[i]) in del_pidlist:
+                    print(f'You cannot attack PID \'{pid[i]}\'.')
+                    del pid[i]
+        else: 
+            print('Wrong command.')
+                    
+        
+        print("Attackable PID:")
+        print(* pid)
+        
                 
         return pid
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
