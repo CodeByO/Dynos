@@ -188,7 +188,7 @@ class hiJacking():
                 print("Vulnerable dll Lists : ")
                 for i in dir_list:
                     print(i)
-                print("Vulnerable PID : " + str(pid))
+                print("Vulnerable Program Name : " + program_name)
                 psutil.Process(pid).kill()
                 successed_list = self.change_dll(path_dll,dir_list,program_name)
                 
