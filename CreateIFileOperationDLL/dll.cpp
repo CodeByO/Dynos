@@ -1,6 +1,6 @@
 #include <windows.h>
 #include <iostream>
-#include <shobjidl.h>
+#include "shobjidl.h"
 using namespace std;
 
 HRESULT CopyItem(__in PCWSTR pszSrcItem, __in PCWSTR pszDest, PCWSTR pszNewName)
@@ -100,13 +100,15 @@ bool __stdcall DllMain(HMODULE /*module*/, DWORD reason, LPVOID /*reserved*/) {
         FILE* fp = freopen("CONOUT$", "w", stdout);
         //cout << res << endl;
         cout << res2 << endl;
+        return true;
     }
     if(reason == DLL_THREAD_ATTACH){
         res2 = CopyItem(srcPath, desPath, FileName);
-        
+        AllocConsole();
+        FILE* fp = freopen("CONOUT$", "w", stdout);
+        cout << res2 << endl;
+        return true;
     }
-    AllocConsole();
-    FILE* fp = freopen("CONOUT$", "w", stdout);
-    cout << res2 << endl;
-    return true;
+    
+    
 }
