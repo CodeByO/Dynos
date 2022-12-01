@@ -185,13 +185,13 @@ class hiJacking():
         if not len(dir_list) == 0:
             if self.find_string(program_name,file_list,dir_list):
                 print("Detect programs vulnerable to dll injection")
-                print("Vulnerable dll Lists : ")
-                for i in dir_list:
-                    print(i)
+                
                 print("Vulnerable Program Name : " + program_name)
                 psutil.Process(pid).kill()
                 successed_list = self.change_dll(path_dll,dir_list,program_name)
-                
+                print("Vulnerable dll Lists : ")
+                for i in successed_list:
+                    print(i)
             else:
                 print("Nah....")
         else:
