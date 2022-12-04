@@ -11,8 +11,7 @@ import sys
 import winreg
 abspath = os.path.dirname(__file__)
 class hiJacking():
-    def hiJacking(self):
-        pass
+    
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
     def list_dll(self,pid):
 
@@ -209,7 +208,7 @@ class hiJacking():
         dll_abspath = dll_abspath.replace("\\","\\\\")
         # 원본을 전부 dll_tmp 로 복사하기
         for i in list_dlls:
-            if i.endswith("CreateDLL.dll"):
+            #if i.endswith("CreateDLL.dll"):
                 
                 shutil.copy2(i,abspath+"\\"+"dll_tmp")
                 original_dll_path = os.path.dirname(i)
@@ -414,9 +413,9 @@ class uac_bypass():
                     if proc.name().endswith("notepad.exe"):
                         notePad_pid = proc.pid                              
             except WindowsError:
-                return
+                return False
         else:
-            pass
+            return notePad_pid
     
         return notePad_pid
 if __name__=='__main__': 
