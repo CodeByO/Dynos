@@ -69,43 +69,42 @@ class hiJacking():
                     
         
         print("\nAttackable PID:", * self.pid)
+        print('\n<안내 - PID를 성공적으로 입력받았습니다.>')
         self.attack()
     
     
     def U_exe(self):
-        pid_in = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n      2개 이상 -> m pid pid ...\n입력할 명령어:')
-        pid_arr = pid_in.split(' ')
-        self.pid = []
-        if pid_arr[0] == 'o':
-            pid_arr.pop(0)
-            self.pid.append(pid_arr[1])
+        print('<안내 - exe 경로 입력 옵션을 선택해주세요>')
+        exe_op = input('1. 경로 1개 입력\n2. 경로 2개 이상 입력 시\n입력할 명령어:')
+        
+        print(f'\n<안내 - {exe_op}개의 exe 경로 입력해주세요>')
+        if exe_op == '1':
+            exe_in = input("입력:")
             
-        elif pid_arr[0] == 'm':
-            pid_arr.pop(0)
-                    
-            self.pid= pid_arr
-                
-                
-                    
+        elif exe_op == '2':
+            exe_in = input("\"경로1\" \"경로2\" 형태로 입력해주세요.\n입력:")
+            exe_in = exe_in.split(' ')
+      
         else: 
-            print('\nERROR::Wrong command..')
+            print('\nERROR::Wrong number..')
             ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
             if ans == 'y':
-                self.__init__()
+                self.U_exe()
             else: 
                 print("\n\n--End the program--\n")
                 return 
-    
+
+        print('\n<안내 - exe 경로를 성공적으로 입력받았습니다.>')
         self.attack()
     
     def U_dll(self):
         print("<안내 - 공격용 악성 dll 옵션을 입력해주세요>")
-        dll_in = input('옵션을 선택해주세요.\n1. 직접 dll 입력하기\t2. 제공되는 dll 사용하기\n입력할 명령어:')
-        if dll_in == '1':
-            user_dll=input('사용하실 dll의 경로를 입력해주세요.\n입력할 경로:')
+        dll_op = input('옵션을 선택해주세요.\n1. 직접 dll 입력하기\t2. 제공되는 dll 사용하기\n입력할 명령어:')
+        if dll_op == '1':
+            dll__in=input('사용하실 dll의 경로를 입력해주세요.\n입력할 경로:')
             
-        elif dll_in == '2':
-            user_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
+        elif dll_op == '2':
+            dll__in = "C:/Users/codeb/Desktop/CreateDLL.dll"
                
         else: 
             print('\nERROR::Wrong number..')
@@ -116,7 +115,8 @@ class hiJacking():
                 print("\n\n--End the program--\n")
                 return
 
-        return user_dll
+        print('\n<안내 - dll 경로 설정을 완료했습니다.>')
+        return dll__in
         
         
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
@@ -232,9 +232,9 @@ class hiJacking():
                     print("Nah....")
             else:
                 print("\nERROR::Not Found writable dir")
-                ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+                ans = input('Do you want to try again? Back to the beginning DLL HiJacking\nYes = \'y\', No =\'q\'\ninput: ')
                 if ans == 'y':
-                    self.in_PID()
+                    self.__init__()
                 else: 
                     print("End the program")
                     return 
