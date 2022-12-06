@@ -2,7 +2,8 @@ import unittest
 import os
 from pyinjector import inject
 import psutil
-from pywinauto import application
+from pywinauto.application import Application
+import pywinauto
 import time
 import subprocess
 import Dynos
@@ -16,6 +17,8 @@ import warnings
 3. strings 명령어가 정상 동작하는지
 
 4. Register UAC Bypass가 정상 동작하는지
+
+5. pyinjector가 정상동작 하는지
 '''
 
 class DynosTest(unittest.TestCase):
@@ -59,7 +62,12 @@ class DynosTest(unittest.TestCase):
         self.assertIsInstance(pid,int)
         psutil.Process(pid).kill()  
 
+    def test_injection(self):
+        pid = self.hijack.create_process(self.mainDll_path)
+        dll_path = os.getcwd() + "/test.dll"
+        self.assertIsInstance(inject(pid,dll_path),int)
         
+        psutil.Process(pid).kill()
 
 if __name__ == '__main__':
     unittest.main()
