@@ -47,7 +47,7 @@ class hiJacking():
             
         elif pid_arr[0] == 'm':
             pid_arr.pop(0)
-            print('<안내 - 2개 이상의 PID를 입력받았습니다.>')
+            print('\n안내 - 2개 이상의 PID를 입력받았습니다.>')
             print('<안내 - Windows의 기본 프로세스 PID를 필터링합니다.>')
             for i in pid_arr:
                 if int(i) in del_pidlist:
@@ -115,7 +115,7 @@ class hiJacking():
                 print("\n\n--End the program--\n")
                 return
 
-        print('\n<안내 - dll 경로 설정을 완료했습니다.>')
+        print('\n<안내 - dll 경로 설정을 완료했습니다.>\n')
         return dll__in
         
         
@@ -208,6 +208,11 @@ class hiJacking():
         except:
             print("\nERROR::Cannot remove or write DLL")
             
+    def gen_txt(self, contents):
+        f = open("새파일.txt", 'w')
+        f.write(contents)
+        f.close()
+                
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
     def attack(self):
@@ -217,7 +222,7 @@ class hiJacking():
         path_dll = self.U_dll()
         
         for i in range(0,len(self.pid)):
-            print(f'{len(self.pid)}개의 pid 중 {i}번째 pid로의 hiJacking!')
+            print(f'{len(self.pid)}개의 pid 중 {i+1}번째 pid로의 hiJacking!')
             
             program_name, list_dlls = self.list_dll(int(self.pid[i]))
             file_list,dir_list = self.check_permission(list_dlls)
