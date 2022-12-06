@@ -120,8 +120,8 @@ class hiJacking():
         
         
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
-    def list_dll(self):
-        stream = os.popen("Listdlls.exe " + str(self.pid))
+    def list_dll(self,pid):
+        stream = os.popen("Listdlls.exe " + str(pid))
         dlls = stream.read()
         program_name = ""
         try:
