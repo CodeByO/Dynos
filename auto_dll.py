@@ -18,18 +18,26 @@ class hiJacking():
                        8344, 8484, 8620, 8724, 8744, 8852, 9272, 9312, 9612, 9820,
                        10228, 10236, 10408, 11228, 11540, 11852, 13152, 13712, 14300, 15280,
                        16536, 17396]
+        
         pid_in = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n      2개 이상 -> m pid pid ...\n입력할 명령어:')
         pid_arr = pid_in.split(' ')
         self.pid = []
         if pid_arr[0] == 'o':
+            pid_arr.pop(0)
             self.pid.append(pid_arr[1])
+            
         elif pid_arr[0] == 'm':
-            for i in range(1, len(pid_arr)):
-                self.pid.append(pid_arr[i])
+            pid_arr.pop(0)
+            
+            for i in pid_arr:
+                if int(i) in del_pidlist:
+                    print(f'\nWARNING::You cannot attack PID \'{i}\'.')
+                    pid_arr.remove(i)
+                    
+            self.pid= pid_arr
                 
-                if int(self.pid[i-1]) in del_pidlist:
-                    print(f'You cannot attack PID \'{self.pid[i]}\'.')
-                    del self.pid[i]
+                
+                    
         else: 
             print('\nERROR::Wrong command..')
             ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
@@ -135,8 +143,10 @@ class hiJacking():
         # pid = self.create_process(path_exe)
         for i in range(0,len(self.pid)):
             print(f'{len(self.pid)}개의 pid 중 {i}번째 pid로의 hiJacking!')
+            
             program_name, list_dlls = self.list_dll(int(self.pid[i]))
             file_list,dir_list = self.check_permission(list_dlls)
+            
             if not len(file_list) == 0:
                 if self.find_string(program_name,file_list,dir_list):
                     print("Detect programs vulnerable to dll injection")
@@ -153,6 +163,7 @@ class hiJacking():
                 else: 
                     print("End the program")
                     return 
+
 class injection():
     def injection(self):
         pass
