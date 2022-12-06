@@ -41,18 +41,21 @@ class hiJacking():
         pid_in = input('pid 1개 입력 시 맨 앞에 \'o\', 2개 이상 입력 시 \'m\' 명령어를 입력해주세요.\n예시> 1개 -> o pid\n      2개 이상 -> m pid pid ...\n입력할 명령어:')
         pid_arr = pid_in.split(' ')
         self.pid = []
+        del_index = []
         if pid_arr[0] == 'o':
             pid_arr.pop(0)
             self.pid.append(pid_arr[1])
             
         elif pid_arr[0] == 'm':
             pid_arr.pop(0)
-            print('\n안내 - 2개 이상의 PID를 입력받았습니다.>')
+            print('\n<안내 - 2개 이상의 PID를 입력받았습니다.>\n')
             print('<안내 - Windows의 기본 프로세스 PID를 필터링합니다.>')
-            for i in pid_arr:
-                if int(i) in del_pidlist:
-                    print(f'\nWARNING::You cannot attack PID \'{i}\'.')
-                    pid_arr.remove(i)
+            for i in range(0, len(pid_arr)):
+                if int(pid_arr[i]) in del_pidlist:
+                    print(f'WARNING::You cannot attack PID \'{pid_arr[i]}\'')
+                    del_index.insert(0, i)
+            for i in del_index:
+                pid_arr.pop(i)
                     
             self.pid= pid_arr
                 
@@ -68,8 +71,9 @@ class hiJacking():
                 return 
                     
         
-        print("\nAttackable PID:", * self.pid)
         print('\n<안내 - PID를 성공적으로 입력받았습니다.>')
+        print("Attackable PID:", * self.pid)
+        print("\n")
         self.attack()
     
     
@@ -99,11 +103,13 @@ class hiJacking():
     
     def U_dll(self):
         print("<안내 - 공격용 악성 dll 옵션을 입력해주세요>")
-        dll_op = input('옵션을 선택해주세요.\n1. 직접 dll 입력하기\t2. 제공되는 dll 사용하기\n입력할 명령어:')
+        dll_op = input('1. 직접 dll 입력하기\t2. 제공되는 dll 사용하기\n입력할 명령어:')
         if dll_op == '1':
+            print('\n<안내 - \'직접 dll 입력하기\'를 선택하셨습니다.>')
             dll__in=input('사용하실 dll의 경로를 입력해주세요.\n입력할 경로:')
             
         elif dll_op == '2':
+            print('\n<안내 - \'제공되는 dll 사용하기\'를 선택하셨습니다.>')
             dll__in = "C:/Users/codeb/Desktop/CreateDLL.dll"
                
         else: 
