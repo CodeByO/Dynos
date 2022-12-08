@@ -127,37 +127,33 @@ class hiJacking():
         
     #Listdlls.exe 파일을 이용하여 입력된 pid에서 로드하는 dll 목록을 가져옴
     def list_dll(self,pid):
-        stream = os.popen("Listdlls.exe " + pid)
+    
+        list_dll_path = os.getcwd() + "/" + "Listdlls.exe "
+        stream = os.popen(list_dll_path + str(pid))
+        
         dlls = stream.read()
         program_name = ""
-        try:
-            program_name = dlls.split("\n")[7]
-            program_name = program_name.replace("Command line: ", '').replace('"', '').replace(' -bystartup','').replace('\\','/')
-            if not program_name.endswith('.exe'):
-                raise Exception("not exe File")
-        except:
-            print("\nERROR::Wrong pid...")
-            ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
-            if ans == 'y':
-                self.list_dll()
-            else: 
-                print("\n\n--End the program--\n")
-                return 
-            
-        
-        
-        if 'C:/' not in program_name:
-            name_split = program_name.split('/')
-            name = name_split[-1]
-            for dirpath, dirname, filename in tqdm(os.walk("C:/")):
-                if name in filename:
-                    program_name =  os.path.join(dirpath, name)
-
-        split_text = dlls.replace("\\","/").replace(' ', '\n').split('\n')
         list_dlls = []
-        for i in split_text:
-            if i.endswith(".dll"):
-                list_dlls.append(i)
+        list_programs = []
+        path_lists = []
+
+        try:
+            split_text = dlls.replace("\\","/").replace('  ','\n').split('\n')
+            
+       
+            for i in split_text:
+                path_lists.append(i.replace(" ",""))
+            
+            for i in path_lists:
+                if i.endswith(".exe"):
+                    list_programs.append(i)
+                if i.endswith(".dll"):
+                    list_dlls.append(i)   
+            for i in list_programs:
+                if i.startswith("C:/"):
+                    program_name = i
+        except:
+            print("Wrong pid...")
         return program_name, list_dlls
         
     
