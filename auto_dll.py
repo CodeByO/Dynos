@@ -44,7 +44,7 @@ class hiJacking():
         del_index = []
         if pid_arr[0] == 'o':
             pid_arr.pop(0)
-            self.pid.append(pid_arr[1])
+            self.pid.append(pid_arr[0])
             
         elif pid_arr[0] == 'm':
             pid_arr.pop(0)
