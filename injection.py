@@ -79,7 +79,29 @@ class injection():
         
     def create_process(self,path):
             return subprocess.Popen([path]).pid
-        
+    def U_dll(self):
+        print("<안내 - 공격용 악성 dll 옵션을 입력해주세요>")
+        dll_op = input('1. 직접 dll 입력하기\t2. 제공되는 dll 사용하기\n입력할 명령어:')
+        if dll_op == '1':
+            print('\n<안내 - \'직접 dll 입력하기\'를 선택하셨습니다.>')
+            dll__in=input('사용하실 dll의 경로를 입력해주세요.\n입력할 경로:')
+            
+        elif dll_op == '2':
+            print('\n<안내 - \'제공되는 dll 사용하기\'를 선택하셨습니다.>')
+            
+            dll__in = os.getcwd() + "/test.dll"
+            dll__in = dll__in.replace("\\","/")
+        else: 
+            print('\nERROR::Wrong number..')
+            ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+            if ans == 'y':
+                self.U_dll()
+            else: 
+                print("\n\n--End the program--\n")
+                return
+
+        print('\n<안내 - dll 경로 설정을 완료했습니다.>\n')
+        return dll__in    
     def in_exe(self):
         print('<안내 - exe 경로 입력 옵션을 선택해주세요>')
         exe_op = input('1. 경로 1개 입력\n2. 경로 2개 이상 입력 시\n입력할 명령어:')
@@ -117,8 +139,8 @@ class injection():
         self.attack()
     #find_process에서 찾은 pid를 악성 dll을 이용하여 인젝션 해보기
     def attack(self):
-        current_path = os.getcwd()
-        path_dll = current_path.replace("\\","/") +"/test.dll"
+        
+        path_dll = self.U_dll()
         if len(self.pid) == 0:
             for i in self.exe_in:
                 self.pid.append(self.create_process(i))
