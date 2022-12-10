@@ -94,6 +94,7 @@ class DynosTest(unittest.TestCase):
     def test_injection(self):
         pid = create_process(self.mainDll_path)
         dll_path = os.getcwd() + "/test.dll"
+        dll_path = dll_path.replace("\\","/")
         self.assertIsInstance(inject(pid,dll_path),int)
         
         psutil.Process(pid).kill()
