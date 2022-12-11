@@ -122,7 +122,7 @@ class hiJacking():
         print('\n<안내 - 공격 방식을 선택해 주세요>')
         print('\n 1. Normal Hijacking')
         print('\n 2. Search Order Hijacking')
-        print('\n 3. Abusing IFileOperation (exe only) -- 현재 일반 사용자로는 사용이 불가 합니다.')
+        print('\n 3. Abusing IFileOperation (exe only)')
         mode = input("Input Attack Mode : ")
         if str(mode) == "1":
             self.normal_hijack()
@@ -309,7 +309,7 @@ class hiJacking():
                     print("\nERROR:: \"" + list_dlls[j] + "\" 를 복사 할 수 없습니다.")
                     pass
                     
-                    
+            psutil.Process(pid).kill()        
             newPid = self.create_process(program_name)
             program_name, newList_dlls = self.list_dll(newPid)
 
@@ -327,7 +327,7 @@ class hiJacking():
                             successed_path[j] = k
 
             psutil.Process(newPid).kill()
-                    
+            time.sleep(0.5)        
             for j in changed_path:
                     try:
                         os.remove(j)
@@ -531,14 +531,15 @@ class hiJacking():
                             print("\nFile Name : " + original_dll_path + "/" + dll_name)
                             print("\nYou must restore original dll file yourself!!")
                             
-                        time.sleep(1)
-                        psutil.Process(notePad_pid).kill()
-                        os.remove(abspath + "/"+"CreateIFileOperationDLL\CMakeCache.txt")
-                        shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\CMakeFiles")
-                        shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\Debug")
-                        os.remove(abspath + "/"+"CreateIFileOperationDLL\dll.cpp")
-                        dll_tmp_path = dll_tmp_path.replace("\\\\","/")
-                        os.remove(dll_tmp_path)
+                        finally:
+                            time.sleep(1)
+                            psutil.Process(notePad_pid).kill()
+                            os.remove(abspath + "/"+"CreateIFileOperationDLL\CMakeCache.txt")
+                            shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\CMakeFiles")
+                            shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\Debug")
+                            os.remove(abspath + "/"+"CreateIFileOperationDLL\dll.cpp")
+                            dll_tmp_path = dll_tmp_path.replace("\\\\","/")
+                            os.remove(dll_tmp_path)
                     print("\nAbusing IFileOperation을 통해 공격에 성공한 DLL 목록")
                     print(f'\n프로그램 이름 : {program_name}')
                     for j in successed_list:
