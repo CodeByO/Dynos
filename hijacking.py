@@ -16,6 +16,7 @@ class hiJacking():
         input_op = input("\n입력할 옵션을 선택하시오.\n1. PID 입력하기    2. exe 경로 입력하기\n번호 입력:")
         print("\n")
         self.pid = []
+        self.exe_in = []
         if input_op == '1':
             self.U_PID()
         elif input_op == '2':
@@ -83,7 +84,6 @@ class hiJacking():
     def U_exe(self):
         print('<안내 - exe 경로 입력 옵션을 선택해주세요>')
         exe_op = input('1. 경로 1개 입력\n2. 경로 2개 이상 입력 시\n입력할 명령어:')
-        self.exe_in = []
         print(f'\n<안내 - {exe_op}개의 exe 경로 입력해주세요>')
         if exe_op == '1':
             exe_in = input("입력:")
@@ -381,6 +381,13 @@ class hiJacking():
         
     
     def abusing_IfileOperation(self):
+        if len(self.exe_in) == 0:
+            print("\nERROR::Invalid Arguments")
+            ans = input('Do you want to try again? Back to the beginning DLL HiJacking\nYes = \'y\', No =\'q\'\ninput: ')
+            if ans == 'y':
+                self.__init__()
+            else: 
+                print("\n\n--End the program--\n")
         abspath = os.path.dirname(__file__)
         dll_abspath = self.U_dll()
         successed_list = []
@@ -393,6 +400,8 @@ class hiJacking():
         else:
             os.system("cls")
             #pass
+        
+            
         if len(self.pid) == 0:
             for i in self.exe_in:
                 self.pid.append(self.create_process(i))
