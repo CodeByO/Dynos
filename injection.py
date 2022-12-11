@@ -146,14 +146,19 @@ class injection:
         for i in range(0,len(self.pid)):
             print(f'{len(self.pid)}개의 pid 중 {i+1}번째 pid로의 Injection!')
             pid = int(self.pid[i])
-            result = inject(pid,path_dll)
             
-            if(str(type(result)) == "<class 'int'>"):
-                psutil.Process(pid).kill() 
-                print(str(pid) + " 인젝션 성공!")    
-            
-            else:
+            try:
+                inject(pid,path_dll)
+            except:
                 print("\nERROR::Injection Attack Fail")
+                ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
+                if ans == 'y':
+                    self.__init__()
+                else: 
+                    print("\n\n--End the program--\n")
+                    return  
+            
+                
                 
         print("\n\n--End the program--\n")
         exit(0)

