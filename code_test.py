@@ -7,7 +7,7 @@ import psutil
 import Dynos
 import warnings
 import subprocess
-from uac_bypass import uac_bypass
+#from uac_bypass import uac_bypass
 '''
 테스트 목록
 1. Listdlls가 정상 동작하는지
@@ -16,7 +16,7 @@ from uac_bypass import uac_bypass
 
 3. strings 명령어가 정상 동작하는지
 
-4. Register UAC Bypass가 정상 동작하는지
+4. Register UAC Bypass가 정상 동작하는지 #시스템 설정 클릭시 메모장 클릭되는 버그 발생
 
 5. pyinjector가 정상동작 하는지
 '''
@@ -59,7 +59,7 @@ class DynosTest(unittest.TestCase):
     def setUp(self):
         warnings.filterwarnings(action='ignore')
         
-        self.uac_bypass = uac_bypass()
+        #self.uac_bypass = uac_bypass()
         self.mainDll_path = os.getcwd() + "/ExamDLL2/CreateDLL/x64/Debug/MainDLL.exe"
         self.mainDll_path = self.mainDll_path.replace("\\","/")
           
@@ -85,11 +85,11 @@ class DynosTest(unittest.TestCase):
         
         self.assertTrue(string.startswith("!This program cannot be run in DOS mode."))
     
-    def test_uac_bypass(self):
-        pid = self.uac_bypass.execute()
+    # def test_uac_bypass(self):
+    #     pid = self.uac_bypass.execute()
         
-        self.assertIsInstance(pid,int)
-        psutil.Process(pid).kill()  
+    #     self.assertIsInstance(pid,int)
+    #     psutil.Process(pid).kill()  
 
     def test_injection(self):
         pid = create_process(self.mainDll_path)
