@@ -6,7 +6,6 @@ import psutil
 import shutil
 from pywinauto import *
 import time
-from uac_bypass import uac_bypass
 
 
 

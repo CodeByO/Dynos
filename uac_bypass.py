@@ -1,5 +1,4 @@
 import ctypes
-import sys
 import winreg
 import os
 import psutil

@@ -4,8 +4,7 @@ import subprocess
 import psutil
 from pywinauto import *
 
-
-class injection():
+class injection:
     
     def __init__(self):
         print("\n\nExecute DLL Injection mode------------------------------------------")
