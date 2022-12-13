@@ -149,6 +149,7 @@ class injection:
             
             try:
                 inject(pid,path_dll)
+                psutil.Process(pid).kill()
             except:
                 print("\nERROR::Injection Attack Fail")
                 ans = input('Do you want to try again? yes = \'y\', No =\'q\'\ninput: ')
